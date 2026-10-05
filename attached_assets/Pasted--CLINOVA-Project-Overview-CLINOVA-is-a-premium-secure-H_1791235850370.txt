@@ -1,0 +1,14 @@
+🏥 CLINOVA — Project Overview
+CLINOVA is a premium, secure HealthTech clinic management SaaS platform engineered for PS-04 — Secure Clinic & Appointment Management during Build Secure 24. It unifies patient care, doctor consultation workflows, administrative oversight, and AI assistance into a zero-dependency, full-stack web application.
+
+Core Modules & Capabilities:
+Patient Portal: Features interactive doctor discovery with search and multi-field filters; a 5-step appointment booking wizard with double-booking prevention; appointment management (rescheduling and cancellations with .ics calendar generation); medical record timelines; and profile security controls.
+Doctor Workspace: Provides an operational consultation dashboard for daily queues, real-time appointment lifecycle management (Mark Waiting, Start, Complete, Cancel), authorized patient chart inspection, and immediate synthetic medical record generation (diagnoses, notes, prescriptions).
+Admin Control Center: Delivers clinic analytics metrics via Chart.js, patient and doctor account management tables, appointment controls, and a comprehensive real-time Security Audit Log viewer.
+Clinova AI Assistant: A floating conversational assistant featuring role-permission verification, intent resolution, typing indicators, suggested prompt chips, and medical safety disclaimer guardrails.
+Security & Privacy Hardening: Implements strict Role-Based Access Control (RBAC), Web Crypto API session token generation with 8-hour expiry, rate limiting with 3-minute brute-force lockout after 5 failed logins, XSS input sanitization, Content Security Policy (CSP) headers, and privacy-preserving audit logging.
+Synthetic Data Sandbox: Operates on an isolated data layer and simulated REST API controllers, explicitly tagging all clinical data with synthetic sandbox badges to enforce data privacy compliance.
+Built with modern HTML5, Vanilla CSS dark/light theme engines, modular JavaScript backend controllers, and a standalone PowerShell HTTP server (
+
+start-server.ps1
+), CLINOVA provides a complete, production-ready healthcare management ecosystem.
