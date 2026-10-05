@@ -1,0 +1,17 @@
+# Build Secure 24 — Team Metadata
+# Team Composition Rule: Exactly 2 or 4 registered participants.
+
+team:
+  team_id: "PS-04-CLINOVA"
+  name: "Team Abhedya CLINOVA"
+  repository: "https://github.com/buildsecure24/clinova-ps04"
+
+members:
+  - name: "Participant 1"
+    email: "member1@vbit.ac.in"
+  - name: "Participant 2"
+    email: "member2@vbit.ac.in"
+  - name: "Participant 3"
+    email: "member3@vbit.ac.in"
+  - name: "Participant 4"
+    email: "member4@vbit.ac.in"

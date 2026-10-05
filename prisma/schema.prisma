@@ -1,0 +1,143 @@
+// CLINOVA - Prisma Database Schema
+// PS-04 — Secure Clinic & Appointment Management
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  WAITING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PATIENT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patient ProfilePatient?
+  doctor  ProfileDoctor?
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model ProfilePatient {
+  id                           String   @id @default(uuid())
+  userId                       String   @unique
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId                    String   @unique
+  fullName                     String
+  dateOfBirth                  String
+  gender                       String
+  phone                        String
+  address                      String
+  bloodGroup                   String?  @default("O+")
+  allergies                    String?  @default("None listed (Synthetic)")
+  existingConditions           String?  @default("None listed (Synthetic)")
+  currentMedications           String?  @default("None listed (Synthetic)")
+  emergencyContactName         String?
+  emergencyContactRelationship String?
+  emergencyContactPhone        String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+
+  @@map("patients")
+}
+
+model ProfileDoctor {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctorId           String   @unique
+  fullName           String
+  specialization     String
+  experience         String
+  rating             Float    @default(5.0)
+  bio                String?
+  profileImage       String?
+  availabilityStatus String   @default("Available Today")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+
+  @@map("doctors")
+}
+
+model Appointment {
+  id             String            @id @default(uuid())
+  appointmentId  String            @unique
+  patientId      String
+  patient        ProfilePatient    @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  doctorId       String
+  doctor         ProfileDoctor     @relation(fields: [doctorId], references: [doctorId], onDelete: Cascade)
+  date           String
+  time           String
+  reason         String
+  location       String            @default("CLINOVA Main Hub")
+  status         AppointmentStatus @default(CONFIRMED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  medicalRecords MedicalRecord[]
+
+  @@map("appointments")
+}
+
+model MedicalRecord {
+  id            String          @id @default(uuid())
+  recordId      String          @unique
+  patientId     String
+  patient       ProfilePatient  @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  doctorId      String
+  doctor        ProfileDoctor   @relation(fields: [doctorId], references: [doctorId], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment?    @relation(fields: [appointmentId], references: [appointmentId], onDelete: SetNull)
+  date          String
+  visitReason   String
+  diagnosis     String
+  notes         String
+  prescription  String
+  followUp      String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("medical_records")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  resource   String
+  resourceId String
+  timestamp  DateTime @default(now())
+  metadata   String?
+
+  @@map("audit_logs")
+}

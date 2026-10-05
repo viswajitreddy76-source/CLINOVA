@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" class="dark-theme">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CLINOVA — Secure Clinic & Appointment Management Platform</title>
+  <meta name="description" content="A secure clinic management platform connecting patients, doctors, and administrators through one intelligent healthcare workspace. Built for Privacy • Synthetic Demo Data Sandbox Only.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Security Headers & CSP Meta Directives -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Custom Design System -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Toast Notification Stack Container -->
+  <div id="toast-container"></div>
+
+  <!-- Master Header / Glass Navigation -->
+  <header class="sticky top-0 z-40 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="#landing" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 font-extrabold shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition">
+          +
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">CLINOVA</span>
+          <span class="hidden sm:block text-[9px] text-slate-400 font-mono leading-none">Connected Care. Smarter Clinics.</span>
+        </div>
+      </a>
+
+      <!-- Dynamic Role Navigation Links -->
+      <nav id="navbar-links" class="hidden md:flex items-center gap-1"></nav>
+
+      <!-- Right Action Bar (Theme Toggle, Auth Button / Profile Menu) -->
+      <div class="flex items-center gap-3">
+        <button id="theme-toggle-btn" aria-label="Toggle Theme" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-400 transition">
+          <i data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+
+        <div id="navbar-user-area"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Mount Container -->
+  <main id="main-content" class="flex-grow"></main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-200">CLINOVA</span>
+        <span>• Build Secure 24 Hackathon — PS-04</span>
+      </div>
+      <div class="flex items-center gap-2 text-[11px] text-cyan-400">
+        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Protected Healthcare Sandbox • Synthetic Demo Data Only
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Clinova AI Assistant Widget Button -->
+  <div class="fixed bottom-6 right-6 z-50">
+    <button id="ai-chat-toggle" class="btn btn-primary rounded-full p-4 shadow-2xl flex items-center gap-2 border border-cyan-400/40 hover:scale-105 transition">
+      <span class="pulse-dot"></span>
+      <i data-lucide="bot" class="w-5 h-5"></i>
+      <span class="text-xs font-bold hidden sm:inline">Clinova AI</span>
+    </button>
+  </div>
+
+  <!-- AI Assistant Chat Window -->
+  <div id="ai-chat-window" class="glass-card border border-cyan-500/40">
+    <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs"><i data-lucide="bot" class="w-4 h-4"></i></div>
+        <div>
+          <h4 class="font-bold text-sm text-slate-200">Clinova Assistant</h4>
+          <span class="text-[10px] text-cyan-400">Clinic Guide & FAQ Helper</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="ClinovaApp.clearAIChat()" title="Clear Chat" class="p-1 rounded text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        <button onclick="document.getElementById('ai-chat-window').classList.remove('active')" class="text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Scroll Area -->
+    <div id="ai-chat-messages" class="flex-grow p-4 overflow-y-auto space-y-3">
+      <div class="text-left mb-3">
+        <div class="inline-block px-3 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-200 text-xs">
+          👋 Hello! I am **Clinova Assistant**. How can I help you navigate your appointments, doctor availability, or demo records today?
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggested Quick Prompts -->
+    <div class="px-4 py-2 border-t border-slate-800/80 bg-slate-950/60">
+      <div id="ai-suggested-prompts" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="p-3 border-t border-slate-800 bg-slate-900/90 flex items-center gap-2">
+      <input type="text" id="ai-chat-input" onkeydown="if(event.key==='Enter') ClinovaApp.sendAIMessage()" placeholder="Ask Clinova Assistant..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 outline-none focus:border-cyan-500">
+      <button onclick="ClinovaApp.sendAIMessage()" class="btn btn-sm btn-primary p-2.5"><i data-lucide="send" class="w-3.5 h-3.5"></i></button>
+    </div>
+  </div>
+
+  <!-- Application Logic Modules -->
+  <script src="js/db.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    if (window.lucide) window.lucide.createIcons();
+  </script>
+</body>
+</html>
