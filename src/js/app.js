@@ -4286,41 +4286,125 @@ END:VCALENDAR`;
       <div class="max-w-7xl mx-auto py-8 px-4 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span class="badge badge-demo mb-2">ADMIN</span>
-            <h1 class="text-3xl font-extrabold text-slate-100">System Audit Log</h1>
-            <p class="text-xs text-slate-400 mt-1">Immutable record of all system actions and security events</p>
+            <span class="badge badge-demo mb-2">ADMIN SECURITY CENTER</span>
+            <h1 class="text-3xl font-extrabold text-slate-100">Security Audit Log & Activity Monitor</h1>
+            <p class="text-xs text-slate-400 mt-1">Immutable, append-only record of all system events, authentication, access control and patient record operations</p>
           </div>
           <button onclick="ClinovaApp.renderAdminAuditLogs()" class="btn btn-secondary text-xs">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh Log Stream
           </button>
         </div>
 
-        <!-- Filters -->
-        <div class="glass-card p-4 border border-slate-800 flex flex-col sm:flex-row gap-3 flex-wrap">
-          <input type="text" id="admin-audit-search" placeholder="Search by user, action, resource..."
-            class="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500 min-w-[200px]"
-            oninput="ClinovaApp.handleAdminAuditSearch()">
-          <select id="admin-audit-action" onchange="ClinovaApp.handleAdminAuditSearch()"
-            class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500">
-            <option value="ALL">All Actions</option>
-            <option value="LOGIN">LOGIN</option>
-            <option value="LOGOUT">LOGOUT</option>
-            <option value="REGISTER">REGISTER</option>
-            <option value="BOOK_APPOINTMENT">BOOK_APPOINTMENT</option>
-            <option value="RESCHEDULE_APPOINTMENT">RESCHEDULE_APPOINTMENT</option>
-            <option value="CANCEL_APPOINTMENT">CANCEL_APPOINTMENT</option>
-            <option value="COMPLETE_CONSULTATION">COMPLETE_CONSULTATION</option>
-            <option value="UPDATE_APPOINTMENT_STATUS">UPDATE_APPOINTMENT_STATUS</option>
-            <option value="CREATE_MEDICAL_RECORD">CREATE_MEDICAL_RECORD</option>
-            <option value="UPDATE_PROFILE">UPDATE_PROFILE</option>
-            <option value="CHANGE_PASSWORD">CHANGE_PASSWORD</option>
-            <option value="TOGGLE_STATUS">TOGGLE_STATUS</option>
-            <option value="CREATE_DOCTOR">CREATE_DOCTOR</option>
-            <option value="UNAUTHORIZED_RECORD_ACCESS">UNAUTHORIZED_RECORD_ACCESS</option>
-          </select>
-          <button onclick="ClinovaApp.clearAdminAuditFilters()" class="btn btn-secondary text-xs px-4">
-            <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
-          </button>
+        <!-- Security Summary Cards Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="admin-audit-summary-cards">
+          <div class="glass-card p-4 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Total Logins</span>
+              <i data-lucide="log-in" class="w-4 h-4 text-cyan-400"></i>
+            </div>
+            <p class="text-2xl font-black text-slate-100" id="summary-total-logins">--</p>
+            <p class="text-[10px] text-cyan-400 font-mono">Successful User Auth</p>
+          </div>
+
+          <div class="glass-card p-4 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Failed Logins</span>
+              <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+            </div>
+            <p class="text-2xl font-black text-amber-300" id="summary-failed-logins">--</p>
+            <p class="text-[10px] text-amber-400 font-mono">Bad Password / Blocked</p>
+          </div>
+
+          <div class="glass-card p-4 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Denied Access</span>
+              <i data-lucide="shield-off" class="w-4 h-4 text-red-400"></i>
+            </div>
+            <p class="text-2xl font-black text-red-400" id="summary-denied-access">--</p>
+            <p class="text-[10px] text-red-400 font-mono">RBAC / 403 Violations</p>
+          </div>
+
+          <div class="glass-card p-4 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Record Access</span>
+              <i data-lucide="file-text" class="w-4 h-4 text-teal-400"></i>
+            </div>
+            <p class="text-2xl font-black text-slate-100" id="summary-record-access">--</p>
+            <p class="text-[10px] text-teal-400 font-mono">PHI Timeline Accesses</p>
+          </div>
+        </div>
+
+        <!-- Comprehensive Multi-Filters -->
+        <div class="glass-card p-4 border border-slate-800 flex flex-col md:flex-row gap-3 flex-wrap items-center">
+          <div class="flex-1 min-w-[180px] w-full">
+            <label class="text-[10px] text-slate-400 font-mono block mb-1">User Search</label>
+            <input type="text" id="admin-audit-user" placeholder="Search user name or ID..."
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500"
+              oninput="ClinovaApp.handleAdminAuditSearch()">
+          </div>
+
+          <div class="w-full md:w-auto min-w-[120px]">
+            <label class="text-[10px] text-slate-400 font-mono block mb-1">Role</label>
+            <select id="admin-audit-role" onchange="ClinovaApp.handleAdminAuditSearch()"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500">
+              <option value="ALL">All Roles</option>
+              <option value="PATIENT">PATIENT</option>
+              <option value="DOCTOR">DOCTOR</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="GUEST">GUEST</option>
+            </select>
+          </div>
+
+          <div class="w-full md:w-auto min-w-[160px]">
+            <label class="text-[10px] text-slate-400 font-mono block mb-1">Action Type</label>
+            <select id="admin-audit-action" onchange="ClinovaApp.handleAdminAuditSearch()"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500">
+              <option value="ALL">All Actions</option>
+              <option value="LOGIN">LOGIN</option>
+              <option value="LOGOUT">LOGOUT</option>
+              <option value="REGISTER">REGISTER</option>
+              <option value="CHANGE_PASSWORD">CHANGE_PASSWORD</option>
+              <option value="FAILED_PASSWORD_CHANGE">FAILED_PASSWORD_CHANGE</option>
+              <option value="LOGIN_FAILED">LOGIN_FAILED</option>
+              <option value="LOGIN_BLOCKED">LOGIN_BLOCKED</option>
+              <option value="DENIED_ACCESS">DENIED_ACCESS</option>
+              <option value="PATIENT_RECORD_ACCESS">PATIENT_RECORD_ACCESS</option>
+              <option value="UNAUTHORIZED_RECORD_ACCESS">UNAUTHORIZED_RECORD_ACCESS</option>
+              <option value="BOOK_APPOINTMENT">BOOK_APPOINTMENT</option>
+              <option value="RESCHEDULE_APPOINTMENT">RESCHEDULE_APPOINTMENT</option>
+              <option value="CANCEL_APPOINTMENT">CANCEL_APPOINTMENT</option>
+              <option value="COMPLETE_CONSULTATION">COMPLETE_CONSULTATION</option>
+              <option value="CREATE_MEDICAL_RECORD">CREATE_MEDICAL_RECORD</option>
+              <option value="UPDATE_PROFILE">UPDATE_PROFILE</option>
+              <option value="TOGGLE_STATUS">TOGGLE_STATUS</option>
+              <option value="CREATE_DOCTOR">CREATE_DOCTOR</option>
+              <option value="UPDATE_DOCTOR_SCHEDULE">UPDATE_DOCTOR_SCHEDULE</option>
+            </select>
+          </div>
+
+          <div class="w-full md:w-auto min-w-[130px]">
+            <label class="text-[10px] text-slate-400 font-mono block mb-1">Date</label>
+            <input type="date" id="admin-audit-date" onchange="ClinovaApp.handleAdminAuditSearch()"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500">
+          </div>
+
+          <div class="w-full md:w-auto min-w-[120px]">
+            <label class="text-[10px] text-slate-400 font-mono block mb-1">Result</label>
+            <select id="admin-audit-result" onchange="ClinovaApp.handleAdminAuditSearch()"
+              class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:border-amber-500">
+              <option value="ALL">All Outcomes</option>
+              <option value="SUCCESS">SUCCESS</option>
+              <option value="FAILED">FAILED</option>
+              <option value="DENIED">DENIED</option>
+              <option value="BLOCKED">BLOCKED</option>
+            </select>
+          </div>
+
+          <div class="w-full md:w-auto self-end">
+            <button onclick="ClinovaApp.clearAdminAuditFilters()" class="btn btn-secondary text-xs px-4 py-2 w-full md:w-auto">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
+            </button>
+          </div>
         </div>
 
         <div class="glass-card border border-slate-800 overflow-x-auto">
@@ -4331,37 +4415,51 @@ END:VCALENDAR`;
       </div>
     `;
     if (window.lucide) window.lucide.createIcons();
-    await this._loadAdminAuditTable(user, 'ALL', '');
+    await this._loadAdminAuditTable(user);
   },
 
-  async _loadAdminAuditTable(user, actionFilter, search) {
-    const res = await window.clinovaAPI.getAuditLogs(user, actionFilter);
+  async _loadAdminAuditTable(user) {
+    const userFilter = document.getElementById('admin-audit-user')?.value || '';
+    const roleFilter = document.getElementById('admin-audit-role')?.value || 'ALL';
+    const actionFilter = document.getElementById('admin-audit-action')?.value || 'ALL';
+    const dateFilter = document.getElementById('admin-audit-date')?.value || '';
+    const resultFilter = document.getElementById('admin-audit-result')?.value || 'ALL';
+
+    const res = await window.clinovaAPI.getAuditLogs(user, {
+      user: userFilter,
+      role: roleFilter,
+      action: actionFilter,
+      date: dateFilter,
+      result: resultFilter
+    });
+
     const wrap = document.getElementById('admin-audit-table-wrap');
     if (!wrap) return;
 
     if (!res.success) {
-      wrap.innerHTML = `<p class="p-6 text-red-400 text-sm font-bold">Error: ${res.message}</p>`;
+      wrap.innerHTML = `<p class="p-6 text-red-400 text-sm font-bold">Access Denied: ${res.message}</p>`;
       return;
     }
 
-    let logs = res.data;
-    if (search) {
-      const q = search.toLowerCase();
-      logs = logs.filter(l =>
-        (l.userName || '').toLowerCase().includes(q) ||
-        (l.action || '').toLowerCase().includes(q) ||
-        (l.resourceType || '').toLowerCase().includes(q) ||
-        (l.resourceId || '').toLowerCase().includes(q) ||
-        (l.detail || '').toLowerCase().includes(q)
-      );
-    }
+    const { logs, summary } = res.data;
+
+    // Update Summary Cards
+    const elLogins = document.getElementById('summary-total-logins');
+    const elFailed = document.getElementById('summary-failed-logins');
+    const elDenied = document.getElementById('summary-denied-access');
+    const elRecord = document.getElementById('summary-record-access');
+
+    if (elLogins) elLogins.textContent = summary.totalLogins || 0;
+    if (elFailed) elFailed.textContent = summary.failedLogins || 0;
+    if (elDenied) elDenied.textContent = summary.deniedAccess || 0;
+    if (elRecord) elRecord.textContent = summary.patientRecordAccess || 0;
 
     if (logs.length === 0) {
       wrap.innerHTML = `
         <div class="p-12 text-center space-y-3">
           <i data-lucide="shield-check" class="w-12 h-12 text-slate-600 mx-auto"></i>
-          <p class="text-slate-400 font-bold">No audit events found.</p>
-          <button onclick="ClinovaApp.clearAdminAuditFilters()" class="btn btn-secondary text-xs">Clear Filters</button>
+          <p class="text-slate-400 font-bold">No audit events match the selected security filters.</p>
+          <button onclick="ClinovaApp.clearAdminAuditFilters()" class="btn btn-secondary text-xs">Reset All Filters</button>
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
@@ -4374,52 +4472,60 @@ END:VCALENDAR`;
           <tr class="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
             <th class="px-4 py-3 text-left font-bold">Timestamp</th>
             <th class="px-4 py-3 text-left font-bold">User</th>
+            <th class="px-4 py-3 text-left font-bold">Role</th>
             <th class="px-4 py-3 text-left font-bold">Action</th>
-            <th class="px-4 py-3 text-left font-bold hidden md:table-cell">Resource</th>
+            <th class="px-4 py-3 text-left font-bold hidden md:table-cell">Target</th>
+            <th class="px-4 py-3 text-left font-bold hidden lg:table-cell">IP Address</th>
             <th class="px-4 py-3 text-left font-bold hidden lg:table-cell">Details</th>
-            <th class="px-4 py-3 text-left font-bold">Outcome</th>
+            <th class="px-4 py-3 text-left font-bold">Result</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-800/60">
           ${logs.map(l => this._renderAuditLogTableRow(l)).join('')}
         </tbody>
       </table>
-      <div class="px-4 py-3 border-t border-slate-800 text-xs text-slate-500 font-mono">
-        Showing ${logs.length} log entr${logs.length !== 1 ? 'ies' : 'y'}
+      <div class="px-4 py-3 border-t border-slate-800 text-xs text-slate-500 font-mono flex justify-between items-center">
+        <span>Showing ${logs.length} audit log event${logs.length !== 1 ? 's' : ''}</span>
+        <span class="text-[10px] text-cyan-400">🔒 Append-Only Security Stream</span>
       </div>
     `;
+    if (window.lucide) window.lucide.createIcons();
   },
 
   async handleAdminAuditSearch() {
     const user = window.clinovaAuth.getCurrentUser();
     if (!this._adminGuard(user)) return;
-    const search = document.getElementById('admin-audit-search')?.value || '';
-    const action = document.getElementById('admin-audit-action')?.value || 'ALL';
     const wrap = document.getElementById('admin-audit-table-wrap');
     if (wrap) wrap.innerHTML = `<div class="skeleton h-32 w-full rounded-xl m-4"></div>`;
-    await this._loadAdminAuditTable(user, action, search);
+    await this._loadAdminAuditTable(user);
   },
 
   clearAdminAuditFilters() {
-    const s = document.getElementById('admin-audit-search');
+    const u = document.getElementById('admin-audit-user');
+    const r = document.getElementById('admin-audit-role');
     const a = document.getElementById('admin-audit-action');
-    if (s) s.value = '';
+    const d = document.getElementById('admin-audit-date');
+    const res = document.getElementById('admin-audit-result');
+    if (u) u.value = '';
+    if (r) r.value = 'ALL';
     if (a) a.value = 'ALL';
+    if (d) d.value = '';
+    if (res) res.value = 'ALL';
     this.handleAdminAuditSearch();
   },
 
   _renderAuditLogRow(l) {
     const ts = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
-    const isBlocked = l.outcome === 'BLOCKED';
+    const isBlocked = l.result === 'BLOCKED' || l.result === 'DENIED' || l.status === 'BLOCKED' || l.status === 'DENIED';
     return `
       <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-900 border ${isBlocked ? 'border-red-500/40' : 'border-slate-800'} text-xs">
-        <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isBlocked ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isBlocked ? 'bg-red-500/20 text-red-400' : 'bg-cyan-500/20 text-cyan-400'}">
           <i data-lucide="${isBlocked ? 'shield-alert' : 'shield'}" class="w-3.5 h-3.5"></i>
         </div>
         <div class="flex-1 min-w-0">
           <p class="font-bold ${isBlocked ? 'text-red-300' : 'text-slate-200'}">${l.action}</p>
-          <p class="text-slate-400 text-[10px] truncate">${l.userName} (${l.userRole}) — ${l.detail || ''}</p>
-          <p class="text-slate-600 text-[10px] font-mono">${ts}</p>
+          <p class="text-slate-400 text-[10px] truncate">${l.userName} (${l.role || l.userRole}) — ${l.detail || l.metadata || ''}</p>
+          <p class="text-slate-600 text-[10px] font-mono">${ts} • IP: ${l.ip || '127.0.0.1'}</p>
         </div>
       </div>
     `;
@@ -4427,24 +4533,35 @@ END:VCALENDAR`;
 
   _renderAuditLogTableRow(l) {
     const ts = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
-    const isBlocked = l.outcome === 'BLOCKED';
+    const outcome = l.result || l.status || 'SUCCESS';
+    const isBlocked = outcome === 'BLOCKED' || outcome === 'DENIED' || outcome === 'FAILED';
+    const isSuccess = outcome === 'SUCCESS';
+
+    let badgeClass = 'bg-teal-500/20 text-teal-400 border-teal-500/30';
+    if (outcome === 'DENIED') badgeClass = 'bg-red-500/20 text-red-400 border-red-500/30';
+    if (outcome === 'BLOCKED') badgeClass = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+    if (outcome === 'FAILED') badgeClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
     return `
-      <tr class="hover:bg-slate-900/60 transition ${isBlocked ? 'bg-red-950/20' : ''}">
+      <tr class="hover:bg-slate-900/60 transition ${isBlocked ? 'bg-red-950/10' : ''}">
         <td class="px-4 py-3 font-mono text-slate-400 text-[10px] whitespace-nowrap">${ts}</td>
         <td class="px-4 py-3">
           <p class="font-bold text-slate-200">${l.userName || 'System'}</p>
-          <p class="text-slate-500 text-[10px]">${l.userRole || ''} • ${l.userId || ''}</p>
+          <p class="text-slate-500 text-[10px]">${l.userId || ''}</p>
         </td>
         <td class="px-4 py-3">
-          <span class="font-mono font-bold text-[10px] px-2 py-0.5 rounded-lg ${isBlocked ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}">${l.action}</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">${l.role || l.userRole || 'GUEST'}</span>
+        </td>
+        <td class="px-4 py-3">
+          <span class="font-mono font-bold text-[10px] px-2 py-0.5 rounded-lg ${isBlocked ? 'bg-red-500/20 text-red-400' : 'bg-cyan-500/20 text-cyan-400'}">${l.action}</span>
         </td>
         <td class="px-4 py-3 hidden md:table-cell">
-          <p class="text-slate-300 font-mono text-[10px]">${l.resourceType || 'N/A'}</p>
-          <p class="text-slate-500 text-[10px]">${l.resourceId || ''}</p>
+          <p class="text-slate-300 font-mono text-[10px]">${l.target || (l.resource ? `${l.resource}:${l.resourceId || 'ALL'}` : 'System')}</p>
         </td>
-        <td class="px-4 py-3 text-slate-400 hidden lg:table-cell max-w-[160px] truncate">${l.detail || ''}</td>
+        <td class="px-4 py-3 font-mono text-slate-400 text-[10px] hidden lg:table-cell">${l.ip || '127.0.0.1'}</td>
+        <td class="px-4 py-3 text-slate-400 hidden lg:table-cell max-w-[180px] truncate" title="${l.metadata || l.detail || ''}">${l.metadata || l.detail || '—'}</td>
         <td class="px-4 py-3">
-          <span class="badge badge-${isBlocked ? 'cancelled' : 'confirmed'}">${l.outcome || 'SUCCESS'}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold border ${badgeClass}">${outcome}</span>
         </td>
       </tr>
     `;

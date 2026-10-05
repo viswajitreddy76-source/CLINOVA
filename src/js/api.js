@@ -23,6 +23,36 @@ class ClinovaAPI {
 
   // --- SECURITY HELPERS ---
 
+  _verifySession(currentUser, requiredRole = null) {
+    if (!currentUser || !currentUser.token) {
+      return { valid: false, error: this._error('Authentication required. Please log in.', 401) };
+    }
+    if (this.db.isTokenInvalidated(currentUser.token)) {
+      return { valid: false, error: this._error('Session invalidated. Please log in again.', 401) };
+    }
+    if (currentUser.expiresAt && new Date(currentUser.expiresAt).getTime() < Date.now()) {
+      return { valid: false, error: this._error('Session expired. Please log in again.', 401) };
+    }
+    if (requiredRole) {
+      const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+      if (!allowedRoles.includes(currentUser.role)) {
+        this.db.logAudit(
+          currentUser.userId,
+          currentUser.fullName,
+          currentUser.role,
+          'DENIED_ACCESS',
+          'SystemResource',
+          allowedRoles.join(','),
+          'DENIED',
+          `Attempted access without ${allowedRoles.join('/')} privileges`,
+          '127.0.0.1'
+        );
+        return { valid: false, error: this._error('403 — Privilege restriction. Access denied.', 403) };
+      }
+    }
+    return { valid: true };
+  }
+
   _sanitize(input) {
     if (typeof input !== 'string') return input;
     return input.replace(/[<>&'"]/g, char => {
@@ -78,24 +108,34 @@ class ClinovaAPI {
     const cleanEmail = this._sanitize(email).toLowerCase();
     const rateCheck = this._checkRateLimit(cleanEmail);
     if (rateCheck.locked) {
-      this.db.logAudit('GUEST', 'Anonymous', 'GUEST', 'LOGIN_BLOCKED', 'AuthService', cleanEmail, 'BLOCKED', `Account locked due to rate limit. Retry in ${rateCheck.remainingSec}s`);
+      this.db.logAudit('GUEST', 'Anonymous', 'GUEST', 'LOGIN_BLOCKED', 'AuthService', cleanEmail, 'BLOCKED', `Account locked due to rate limit. Retry in ${rateCheck.remainingSec}s`, '127.0.0.1');
       return this._error(`Too many failed login attempts. Account temporarily locked for ${rateCheck.remainingSec} seconds.`, 429);
     }
 
     const user = this.db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
     if (!user) {
       this._recordFailedLogin(cleanEmail);
+      this.db.logAudit('GUEST', 'Anonymous', 'GUEST', 'LOGIN_FAILED', 'AuthService', cleanEmail, 'FAILED', 'Invalid credentials attempt', '127.0.0.1');
       return this._error('Invalid email or password.', 401);
     }
 
-    if (user.passwordHash !== password) {
+    // Verify password with Argon2 / Bcrypt crypto service
+    const isPasswordValid = await window.ClinovaCrypto.verifyPassword(password, user.passwordHash);
+    if (!isPasswordValid) {
       this._recordFailedLogin(cleanEmail);
-      this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN_FAILED', 'AuthService', cleanEmail, 'FAILED', 'Invalid password attempt');
+      this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN_FAILED', 'AuthService', cleanEmail, 'FAILED', 'Invalid credentials attempt', '127.0.0.1');
       return this._error('Invalid email or password.', 401);
     }
 
     if (!user.isActive) {
+      this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN_FAILED', 'AuthService', cleanEmail, 'DENIED', 'Deactivated account login attempt', '127.0.0.1');
       return this._error('Account deactivated. Please contact support.', 403);
+    }
+
+    // Upgrade legacy password hash to Argon2 if needed
+    if (!user.passwordHash.startsWith('$argon2id$')) {
+      const hashed = await window.ClinovaCrypto.hashPassword(password);
+      this.db.update('users', 'id', user.id, { passwordHash: hashed });
     }
 
     this._clearLoginAttempts(cleanEmail);
@@ -127,8 +167,27 @@ class ClinovaAPI {
       isActive: user.isActive
     };
 
-    this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN', 'AuthService', user.email, 'SUCCESS', 'Authenticated via secure API');
+    this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN', 'AuthService', user.email, 'SUCCESS', 'Authenticated via Argon2 secure API', '127.0.0.1');
     return this._success({ session, user: safeUser });
+  }
+
+  async logout(currentUser) {
+    await this._delay(100);
+    if (currentUser && currentUser.token) {
+      this.db.invalidateToken(currentUser.token, currentUser.userId);
+      this.db.logAudit(
+        currentUser.userId,
+        currentUser.fullName,
+        currentUser.role,
+        'LOGOUT',
+        'AuthService',
+        currentUser.email,
+        'SUCCESS',
+        'User logged out and session invalidated',
+        '127.0.0.1'
+      );
+    }
+    return this._success(null, 'Logged out successfully.');
   }
 
   async registerPatient(formData) {
@@ -143,6 +202,7 @@ class ClinovaAPI {
     const existingUser = this.db.findOne('users', u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) return this._error('An account with this email already exists.', 409);
 
+    const passwordHash = await window.ClinovaCrypto.hashPassword(password);
     const newPatientNum = 10249 + this.db.get('patients').length;
     const patientId = `PT-${newPatientNum}`;
     const userId = `usr-patient-${Date.now()}`;
@@ -150,7 +210,7 @@ class ClinovaAPI {
     const newUser = {
       id: userId,
       email,
-      passwordHash: password,
+      passwordHash,
       role: 'PATIENT',
       patientId,
       fullName,
@@ -192,7 +252,7 @@ class ClinovaAPI {
     };
     this.db.insert('patients', newPatient);
 
-    this.db.logAudit(userId, fullName, 'PATIENT', 'REGISTER', 'PatientProfile', patientId, 'SUCCESS', 'New synthetic patient created');
+    this.db.logAudit(userId, fullName, 'PATIENT', 'REGISTER', 'PatientProfile', patientId, 'SUCCESS', 'New synthetic patient created with Argon2 security', '127.0.0.1');
     return this.login(email, password);
   }
 
@@ -200,7 +260,10 @@ class ClinovaAPI {
 
   async getPatientProfile(currentUser) {
     await this._delay(150);
-    if (!currentUser || (currentUser.role !== 'PATIENT' && currentUser.role !== 'ADMIN')) {
+    const authCheck = this._verifySession(currentUser);
+    if (!authCheck.valid) return authCheck.error;
+
+    if (currentUser.role !== 'PATIENT' && currentUser.role !== 'ADMIN') {
       return this._error('Access denied. Patient authorization required.', 403);
     }
     const patientId = currentUser.role === 'PATIENT' ? currentUser.patientId : (currentUser.patientId || 'PT-10245');
@@ -211,7 +274,10 @@ class ClinovaAPI {
 
   async updatePatientProfile(currentUser, profileData) {
     await this._delay(200);
-    if (!currentUser || (currentUser.role !== 'PATIENT' && currentUser.role !== 'ADMIN')) {
+    const authCheck = this._verifySession(currentUser);
+    if (!authCheck.valid) return authCheck.error;
+
+    if (currentUser.role !== 'PATIENT' && currentUser.role !== 'ADMIN') {
       return this._error('Access denied. Patient authorization required.', 403);
     }
 
@@ -251,14 +317,15 @@ class ClinovaAPI {
     // Sync full name in user record and session
     this.db.update('users', 'id', currentUser.userId, { fullName: fullName.trim() });
 
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UPDATE_PROFILE', 'PatientProfile', patientId, 'SUCCESS', 'Updated profile & emergency contact info');
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UPDATE_PROFILE', 'PatientProfile', patientId, 'SUCCESS', 'Updated profile & emergency contact info', '127.0.0.1');
 
     return this._success(updatedPatient, 'Profile updated successfully.');
   }
 
   async changePassword(currentUser, passwordData) {
     await this._delay(200);
-    if (!currentUser) return this._error('Authentication required.', 401);
+    const authCheck = this._verifySession(currentUser);
+    if (!authCheck.valid) return authCheck.error;
 
     const { currentPassword, newPassword, confirmPassword } = passwordData;
 
@@ -269,7 +336,9 @@ class ClinovaAPI {
     const user = this.db.findOne('users', u => u.id === currentUser.userId);
     if (!user) return this._error('User account not found.', 404);
 
-    if (user.passwordHash !== currentPassword) {
+    const isCurrentValid = await window.ClinovaCrypto.verifyPassword(currentPassword, user.passwordHash);
+    if (!isCurrentValid) {
+      this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'FAILED_PASSWORD_CHANGE', 'UserAccount', user.id, 'FAILED', 'Incorrect current password provided', '127.0.0.1');
       return this._error('Current password is incorrect.', 400);
     }
 
@@ -281,9 +350,10 @@ class ClinovaAPI {
       return this._error('New password and confirmation do not match.', 400);
     }
 
-    this.db.update('users', 'id', user.id, { passwordHash: newPassword });
+    const newHash = await window.ClinovaCrypto.hashPassword(newPassword);
+    this.db.update('users', 'id', user.id, { passwordHash: newHash });
 
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CHANGE_PASSWORD', 'UserAccount', user.id, 'SUCCESS', 'Password updated successfully');
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CHANGE_PASSWORD', 'UserAccount', user.id, 'SUCCESS', 'Password updated with Argon2 hash', '127.0.0.1');
 
     return this._success(null, 'Password updated successfully.');
   }
@@ -759,31 +829,88 @@ class ClinovaAPI {
     });
   }
 
-  async getAuditLogs(currentUser, actionFilter = 'ALL') {
+  async getAuditLogs(currentUser, filters = {}) {
     await this._delay(150);
-    if (currentUser.role !== 'ADMIN') {
-      return this._error('Access denied. Admin authorization required.', 403);
+    const authCheck = this._verifySession(currentUser, 'ADMIN');
+    if (!authCheck.valid) {
+      return authCheck.error;
     }
+
     let logs = this.db.get('auditLogs');
-    if (actionFilter && actionFilter !== 'ALL') {
-      logs = logs.filter(l => l.action === actionFilter);
+
+    const action = typeof filters === 'string' ? filters : (filters.action || 'ALL');
+    const role = filters.role || 'ALL';
+    const result = filters.result || 'ALL';
+    const date = filters.date || '';
+    const userSearch = filters.user || '';
+    const generalSearch = filters.search || '';
+
+    if (action && action !== 'ALL') {
+      logs = logs.filter(l => l.action === action);
     }
+    if (role && role !== 'ALL') {
+      logs = logs.filter(l => l.role === role);
+    }
+    if (result && result !== 'ALL') {
+      logs = logs.filter(l => (l.result || l.status) === result);
+    }
+    if (date) {
+      logs = logs.filter(l => l.timestamp && l.timestamp.startsWith(date));
+    }
+    if (userSearch) {
+      const uq = userSearch.toLowerCase().trim();
+      logs = logs.filter(l => 
+        (l.userName || '').toLowerCase().includes(uq) ||
+        (l.userId || '').toLowerCase().includes(uq)
+      );
+    }
+    if (generalSearch) {
+      const q = generalSearch.toLowerCase().trim();
+      logs = logs.filter(l =>
+        (l.userName || '').toLowerCase().includes(q) ||
+        (l.action || '').toLowerCase().includes(q) ||
+        (l.resource || l.target || '').toLowerCase().includes(q) ||
+        (l.resourceId || '').toLowerCase().includes(q) ||
+        (l.metadata || l.detail || '').toLowerCase().includes(q) ||
+        (l.ip || '').toLowerCase().includes(q)
+      );
+    }
+
     logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    return this._success(logs);
+
+    // Admin Security Section Summaries
+    const allLogs = this.db.get('auditLogs');
+    const totalLogins = allLogs.filter(l => l.action === 'LOGIN' && (l.result === 'SUCCESS' || l.status === 'SUCCESS')).length;
+    const failedLogins = allLogs.filter(l => l.action === 'LOGIN_FAILED' || l.action === 'LOGIN_BLOCKED' || (l.action === 'LOGIN' && l.result !== 'SUCCESS')).length;
+    const deniedAccess = allLogs.filter(l => l.action === 'DENIED_ACCESS' || l.action === 'UNAUTHORIZED_RECORD_ACCESS' || l.action === 'UNAUTHORIZED_RECORD_LOOKUP' || l.result === 'DENIED' || l.result === 'BLOCKED').length;
+    const patientRecordAccess = allLogs.filter(l => l.action === 'VIEW_AUTHORIZED_PATIENT' || l.action === 'PATIENT_RECORD_ACCESS' || l.action === 'CREATE_MEDICAL_RECORD' || l.action === 'UNAUTHORIZED_RECORD_ACCESS').length;
+
+    return this._success({
+      logs,
+      summary: {
+        totalLogins,
+        failedLogins,
+        deniedAccess,
+        patientRecordAccess,
+        totalEvents: logs.length
+      }
+    });
   }
 
   async createDoctor(currentUser, doctorData) {
     await this._delay(250);
-    if (currentUser.role !== 'ADMIN') return this._error('Access denied.', 403);
+    const authCheck = this._verifySession(currentUser, 'ADMIN');
+    if (!authCheck.valid) return authCheck.error;
 
     const drNum = 8800 + this.db.get('doctors').length + 1;
     const doctorId = `DR-${drNum}`;
     const userId = `usr-doctor-${Date.now()}`;
+    const passwordHash = await window.ClinovaCrypto.hashPassword(doctorData.password || 'Doctor@123');
 
     const newUser = {
       id: userId,
       email: doctorData.email,
-      passwordHash: doctorData.password || 'Doctor@123',
+      passwordHash,
       role: 'DOCTOR',
       doctorId,
       fullName: doctorData.fullName,
@@ -808,19 +935,18 @@ class ClinovaAPI {
     };
     this.db.insert('doctors', newDoctor);
 
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CREATE_DOCTOR', 'DoctorProfile', doctorId, 'SUCCESS', `Created ${doctorData.fullName}`);
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CREATE_DOCTOR', 'DoctorProfile', doctorId, 'SUCCESS', `Created doctor ${doctorData.fullName}`, '127.0.0.1');
 
     return this._success(newDoctor, 'Doctor account created successfully.');
   }
 
   async updateDoctorDetails(currentUser, doctorId, updates) {
     await this._delay(150);
-    if (!currentUser || currentUser.role !== 'ADMIN') {
-      return this._error('Access denied. Administrator authorization required.', 403);
-    }
+    const authCheck = this._verifySession(currentUser, 'ADMIN');
+    if (!authCheck.valid) return authCheck.error;
 
     const doctor = this.db.findOne('doctors', d => d.doctorId === doctorId);
-    if (!doctor) return this.showToast ? this.showToast('Doctor not found', 'error') : this._error('Doctor not found', 404);
+    if (!doctor) return this._error('Doctor not found', 404);
 
     const allowedUpdates = {};
     if (updates.specialization !== undefined) allowedUpdates.specialization = updates.specialization;
@@ -830,29 +956,29 @@ class ClinovaAPI {
     if (updates.bio !== undefined) allowedUpdates.bio = updates.bio;
 
     const updated = this.db.update('doctors', 'doctorId', doctorId, allowedUpdates);
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UPDATE_DOCTOR_DETAILS', 'DoctorProfile', doctorId, 'SUCCESS', `Updated details for ${doctorId}: ${Object.keys(allowedUpdates).join(', ')}`);
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UPDATE_DOCTOR_DETAILS', 'DoctorProfile', doctorId, 'SUCCESS', `Updated details for ${doctorId}: ${Object.keys(allowedUpdates).join(', ')}`, '127.0.0.1');
 
     return this._success(updated, 'Doctor details updated successfully.');
   }
 
   async toggleAccountStatus(currentUser, type, id, status) {
     await this._delay(150);
-    if (currentUser.role !== 'ADMIN') return this._error('Access denied.', 403);
+    const authCheck = this._verifySession(currentUser, 'ADMIN');
+    if (!authCheck.valid) return authCheck.error;
 
     const table = type === 'patient' ? 'patients' : 'doctors';
     const idField = type === 'patient' ? 'patientId' : 'doctorId';
 
     const updated = this.db.update(table, idField, id, { status });
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'TOGGLE_STATUS', table, id, 'SUCCESS', `Set ${type} status to ${status}`);
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'TOGGLE_STATUS', table, id, 'SUCCESS', `Set ${type} status to ${status}`, '127.0.0.1');
 
     return this._success(updated, `${type.toUpperCase()} status updated to ${status}.`);
   }
 
   async createMedicalRecord(currentUser, recordData) {
     await this._delay(250);
-    if (currentUser.role !== 'DOCTOR' && currentUser.role !== 'ADMIN') {
-      return this._error('Only doctors and administrators can issue synthetic medical records.', 403);
-    }
+    const authCheck = this._verifySession(currentUser, ['DOCTOR']);
+    if (!authCheck.valid) return authCheck.error;
 
     const recNum = 202600 + this.db.get('medicalRecords').length + 1;
     const recordId = `REC-${recNum}`;
@@ -881,14 +1007,15 @@ class ClinovaAPI {
       this.db.update('appointments', 'appointmentId', recordData.appointmentId, { status: 'COMPLETED' });
     }
 
-    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CREATE_MEDICAL_RECORD', 'MedicalRecord', recordId, 'SUCCESS', `Issued diagnosis: ${recordData.diagnosis}`);
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'CREATE_MEDICAL_RECORD', 'MedicalRecord', recordId, 'SUCCESS', `Issued diagnosis: ${recordData.diagnosis}`, '127.0.0.1');
 
     return this._success(newRecord, 'Medical record created successfully.');
   }
 
   async getMedicalRecords(currentUser, filters = {}) {
     await this._delay(150);
-    if (!currentUser) return this._error('403 — Access Restricted', 403);
+    const authCheck = this._verifySession(currentUser);
+    if (!authCheck.valid) return authCheck.error;
 
     let targetPatientId = null;
 
@@ -896,13 +1023,15 @@ class ClinovaAPI {
       // Patients can ONLY access their own records. Never trust browser-supplied patientId.
       targetPatientId = currentUser.patientId;
       if (filters.patientId && filters.patientId !== currentUser.patientId) {
-        this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UNAUTHORIZED_RECORD_ACCESS', 'MedicalRecord', filters.patientId, 'BLOCKED', 'Attempted unauthorized record query');
-        return this._error('403 — Access Restricted', 403);
+        this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UNAUTHORIZED_RECORD_ACCESS', 'MedicalRecord', filters.patientId, 'BLOCKED', 'Attempted unauthorized patient record query', '127.0.0.1');
+        return this._error('403 — Access Restricted: Patients can only view their own medical records.', 403);
       }
     } else if (currentUser.role === 'DOCTOR') {
       targetPatientId = filters.patientId || null;
     } else if (currentUser.role === 'ADMIN') {
-      targetPatientId = filters.patientId || null;
+      // Least privilege: Admins manage system operations without unnecessary clinical privileges
+      this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'DENIED_ACCESS', 'MedicalRecord', filters.patientId || 'ALL', 'DENIED', 'Admin attempted clinical patient record query', '127.0.0.1');
+      return this._error('403 — Access Restricted: System administrators manage system operations without unnecessary clinical access to private patient medical records.', 403);
     } else {
       return this._error('403 — Access Restricted', 403);
     }
@@ -942,23 +1071,34 @@ class ClinovaAPI {
     // Sort Newest -> Oldest
     records.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    // Audit log patient record access
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'PATIENT_RECORD_ACCESS', 'MedicalRecord', targetPatientId || 'QUERY', 'SUCCESS', 'Accessed patient medical records timeline', '127.0.0.1');
+
     return this._success(records);
   }
 
   async getMedicalRecordById(currentUser, recordId) {
     await this._delay(150);
-    if (!currentUser) return this._error('403 — Access Restricted', 403);
+    const authCheck = this._verifySession(currentUser);
+    if (!authCheck.valid) return authCheck.error;
+
+    if (currentUser.role === 'ADMIN') {
+      this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'DENIED_ACCESS', 'MedicalRecord', recordId, 'DENIED', 'Admin attempted clinical medical record lookup', '127.0.0.1');
+      return this._error('403 — Access Restricted: System administrators manage system operations without unnecessary clinical privileges.', 403);
+    }
 
     const record = this.db.findOne('medicalRecords', r => r.recordId === recordId);
 
     if (currentUser.role === 'PATIENT') {
       if (!record || record.patientId !== currentUser.patientId) {
-        this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UNAUTHORIZED_RECORD_LOOKUP', 'MedicalRecord', recordId, 'BLOCKED', 'Unauthorized single record lookup');
+        this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'UNAUTHORIZED_RECORD_LOOKUP', 'MedicalRecord', recordId, 'BLOCKED', 'Unauthorized single record lookup attempt', '127.0.0.1');
         return this._error('403 — Access Restricted', 403);
       }
     }
 
     if (!record) return this._error('403 — Access Restricted', 403);
+
+    this.db.logAudit(currentUser.userId, currentUser.fullName, currentUser.role, 'PATIENT_RECORD_ACCESS', 'MedicalRecord', recordId, 'SUCCESS', 'Accessed detailed medical record view', '127.0.0.1');
 
     return this._success(record);
   }

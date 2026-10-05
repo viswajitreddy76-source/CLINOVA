@@ -36,16 +36,7 @@ class ClinovaAuth {
 
   clearSession() {
     if (this.session) {
-      window.clinovaDB.logAudit(
-        this.session.userId,
-        this.session.fullName,
-        this.session.role,
-        'LOGOUT',
-        'AuthService',
-        this.session.email,
-        'SUCCESS',
-        'User logged out'
-      );
+      window.clinovaAPI.logout(this.session);
     }
     this.session = null;
     localStorage.removeItem(SESSION_STORAGE_KEY);
