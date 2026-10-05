@@ -280,7 +280,14 @@ const ClinovaApp = {
       `;
     }
 
-    if (navContainer) navContainer.innerHTML = linksHtml;
+    if (navContainer) {
+      navContainer.innerHTML = linksHtml;
+      navContainer.querySelectorAll('a').forEach(link => {
+        if (link.getAttribute('href') === `#${this.currentRoute}`) {
+          link.setAttribute('aria-current', 'page');
+        }
+      });
+    }
 
     const userArea = document.getElementById('navbar-user-area');
     if (userArea) {
@@ -751,13 +758,13 @@ const ClinovaApp = {
 
           <form id="login-form" onsubmit="ClinovaApp.handleLoginSubmit(event)">
             <div class="mb-4">
-              <label class="block text-xs font-semibold text-slate-400 mb-2">Email Address</label>
-              <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="name@clinova.demo">
+              <label for="login-email" class="block text-xs font-semibold text-slate-400 mb-2">Email Address</label>
+              <input type="email" id="login-email" autocomplete="username" required class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="name@clinova.demo">
             </div>
 
             <div class="mb-6">
-              <label class="block text-xs font-semibold text-slate-400 mb-2">Password</label>
-              <input type="password" id="login-password" required class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="••••••••">
+              <label for="login-password" class="block text-xs font-semibold text-slate-400 mb-2">Password</label>
+              <input type="password" id="login-password" autocomplete="current-password" required class="w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="••••••••">
             </div>
 
             <button type="submit" class="w-full btn btn-primary py-3 mb-4">Sign In to Dashboard</button>
@@ -775,26 +782,26 @@ const ClinovaApp = {
           <h2 class="text-2xl font-bold text-center mb-6">Create Patient Account</h2>
           <form id="register-form" onsubmit="ClinovaApp.handleRegisterSubmit(event)" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+              <label for="reg-name" class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
               <input type="text" id="reg-name" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="Alex Johnson">
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Email</label>
+                <label for="reg-email" class="block text-xs font-semibold text-slate-400 mb-1">Email</label>
                 <input type="email" id="reg-email" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="alex@demo.com">
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Phone</label>
+                <label for="reg-phone" class="block text-xs font-semibold text-slate-400 mb-1">Phone</label>
                 <input type="text" id="reg-phone" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none" placeholder="+1 (555) 000-0000">
               </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                <label for="reg-pass" class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
                 <input type="password" id="reg-pass" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none">
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Confirm Password</label>
+                <label for="reg-confirm" class="block text-xs font-semibold text-slate-400 mb-1">Confirm Password</label>
                 <input type="password" id="reg-confirm" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm focus:border-cyan-500 outline-none">
               </div>
             </div>
@@ -859,7 +866,7 @@ const ClinovaApp = {
             <!-- Sort By Dropdown -->
             <div>
               <select id="doc-sort-select" onchange="ClinovaApp.filterDoctorsList()" class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-slate-100 outline-none focus:border-cyan-500">
-                <option value="rating_desc">Highest Rated ⭐</option>
+                <option value="rating_desc">Highest Rated</option>
                 <option value="experience_desc">Most Experienced</option>
                 <option value="available_first">Available Now</option>
                 <option value="name_asc">Name A - Z</option>
@@ -893,9 +900,9 @@ const ClinovaApp = {
               <label class="block text-slate-400 mb-1">Minimum Rating</label>
               <select id="doc-rating-filter" onchange="ClinovaApp.filterDoctorsList()" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 outline-none focus:border-cyan-500">
                 <option value="ALL">Any Rating</option>
-                <option value="4.5">⭐ 4.5+ Stars</option>
-                <option value="4.8">⭐ 4.8+ Stars</option>
-                <option value="4.9">⭐ 4.9+ Stars</option>
+                <option value="4.5">4.5+ Rating</option>
+                <option value="4.8">4.8+ Rating</option>
+                <option value="4.9">4.9+ Rating</option>
               </select>
             </div>
           </div>
@@ -943,12 +950,12 @@ const ClinovaApp = {
               <div>
                 <div class="flex items-start justify-between gap-3 mb-4">
                   <div class="flex items-center gap-3">
-                    <img src="${d.profileImage}" class="w-14 h-14 rounded-full object-cover border-2 border-cyan-400 shadow-md">
+                    <img src="${d.profileImage}" alt="${d.fullName} profile" class="w-14 h-14 rounded-full object-cover border-2 border-cyan-400 shadow-md">
                     <div>
                       <h3 class="text-base font-bold text-slate-100">${d.fullName}</h3>
                       <p class="text-xs font-semibold text-cyan-400">${d.specialization}</p>
                       <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                        <span class="text-amber-400 font-bold">⭐ ${d.rating}</span>
+                        <span class="rating-value font-bold">${d.rating} <span aria-label="rating">rating</span></span>
                         <span>•</span>
                         <span>${d.experience}</span>
                       </div>
@@ -1028,12 +1035,12 @@ const ClinovaApp = {
       <div class="glass-card max-w-lg w-full p-6 border border-cyan-500/40 my-8 shadow-2xl">
         <div class="flex justify-between items-start mb-4 border-b border-slate-800 pb-4">
           <div class="flex items-center gap-4">
-            <img src="${doctor.profileImage}" class="w-16 h-16 rounded-full object-cover border-2 border-cyan-400 shadow-md">
+            <img src="${doctor.profileImage}" alt="${doctor.fullName} profile" class="w-16 h-16 rounded-full object-cover border-2 border-cyan-400 shadow-md">
             <div>
               <h3 class="text-xl font-bold text-slate-100">${doctor.fullName}</h3>
               <p class="text-xs font-semibold text-cyan-400">${doctor.specialization} • ${doctor.doctorId}</p>
               <div class="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                <span class="text-amber-400 font-bold">⭐ ${doctor.rating}</span>
+                <span class="rating-value font-bold">${doctor.rating} <span aria-label="rating">rating</span></span>
                 <span>•</span>
                 <span>${doctor.experience} Experience</span>
               </div>
@@ -1140,12 +1147,12 @@ const ClinovaApp = {
                   return `
                     <div onclick="${isAvailable ? `ClinovaApp.selectDoctorCard('${d.doctorId}', this)` : ''}" class="doctor-card-item p-4 rounded-xl border border-slate-800 bg-slate-900/60 ${isAvailable ? 'cursor-pointer hover:border-cyan-500' : 'opacity-50 cursor-not-allowed'} transition ${isSelected ? 'border-cyan-500 bg-cyan-500/10' : ''}">
                       <div class="flex items-center gap-3">
-                        <img src="${d.profileImage}" class="w-12 h-12 rounded-full object-cover border border-cyan-500/40">
+                        <img src="${d.profileImage}" alt="${d.fullName} profile" class="w-12 h-12 rounded-full object-cover border border-cyan-500/40">
                         <div>
                           <h4 class="font-bold text-sm text-slate-100">${d.fullName}</h4>
                           <p class="text-xs font-semibold text-cyan-400">${d.specialization}</p>
                           <div class="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                            <span class="text-amber-400 font-bold">⭐ ${d.rating}</span>
+                            <span class="rating-value font-bold">${d.rating} <span aria-label="rating">rating</span></span>
                             <span>•</span>
                             <span>${d.experience} exp</span>
                           </div>
@@ -3018,7 +3025,7 @@ END:VCALENDAR`;
       <div class="max-w-4xl mx-auto py-8 px-4 space-y-6">
         <div class="glass-card p-8 border border-slate-800 space-y-6">
           <div class="flex flex-col sm:flex-row items-center gap-6 border-b border-slate-800 pb-6">
-            <img src="${d.profileImage}" class="w-24 h-24 rounded-full object-cover border-2 border-cyan-400/50 shadow-xl">
+            <img src="${d.profileImage}" alt="${d.fullName} profile" class="w-24 h-24 rounded-full object-cover border-2 border-cyan-400/50 shadow-xl">
             <div class="text-center sm:text-left space-y-1">
               <div class="flex items-center justify-center sm:justify-start gap-2">
                 <h2 class="text-3xl font-extrabold text-slate-100">${d.fullName}</h2>
@@ -3026,7 +3033,7 @@ END:VCALENDAR`;
               </div>
               <p class="text-xs font-mono text-cyan-400">Doctor ID: ${d.doctorId} • ${d.experience} Experience</p>
               <div class="flex items-center justify-center sm:justify-start gap-3 text-xs text-amber-400 font-bold pt-1">
-                <span>⭐ ${d.rating} Rating</span>
+                <span>${d.rating} Rating</span>
                 <span>•</span>
                 <span class="text-emerald-400">${d.availabilityStatus || 'Available Today'}</span>
               </div>
@@ -3116,7 +3123,7 @@ END:VCALENDAR`;
       messagesBox.innerHTML = `
         <div class="text-left mb-3">
           <div class="inline-block px-3 py-2 rounded-2xl bg-slate-800 border border-slate-700 text-slate-200 text-xs">
-            👋 Chat cleared. I am **Clinova Assistant**. How can I help you today?
+            Chat cleared. I am Clinova Assistant. How can I help you today?
           </div>
         </div>
       `;
@@ -3781,7 +3788,7 @@ END:VCALENDAR`;
             <tr class="hover:bg-slate-900/60 transition">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <img src="${d.profileImage}" class="w-9 h-9 rounded-full object-cover border border-cyan-500/30">
+                  <img src="${d.profileImage}" alt="${d.fullName} profile" class="w-9 h-9 rounded-full object-cover border border-cyan-500/30">
                   <div>
                     <p class="font-bold text-slate-100">${d.fullName}</p>
                     <p class="text-slate-500 text-[10px] font-mono">${d.email || 'N/A'}</p>
@@ -3790,7 +3797,7 @@ END:VCALENDAR`;
               </td>
               <td class="px-4 py-3 font-mono text-teal-400">${d.doctorId}</td>
               <td class="px-4 py-3 text-slate-300 hidden md:table-cell">${d.specialization}</td>
-              <td class="px-4 py-3 text-slate-300 hidden lg:table-cell">⭐ ${d.rating} • ${d.experience}</td>
+              <td class="px-4 py-3 text-slate-300 hidden lg:table-cell">${d.rating} rating • ${d.experience}</td>
               <td class="px-4 py-3">
                 <span class="badge badge-${d.availability === 'Available' ? 'confirmed' : 'pending'}">${d.availability || 'Available'}</span>
               </td>
@@ -3866,7 +3873,7 @@ END:VCALENDAR`;
       <div class="glass-card max-w-lg w-full p-6 border border-teal-500/40 shadow-2xl my-8 space-y-4">
         <div class="flex justify-between items-start border-b border-slate-800 pb-3">
           <div class="flex items-center gap-4">
-            <img src="${doctor.profileImage}" class="w-14 h-14 rounded-full border-2 border-teal-400 object-cover">
+            <img src="${doctor.profileImage}" alt="${doctor.fullName} profile" class="w-14 h-14 rounded-full border-2 border-teal-400 object-cover">
             <div>
               <span class="badge badge-demo mb-1">ADMIN — DOCTOR PROFILE</span>
               <h3 class="text-xl font-bold text-slate-100">${doctor.fullName}</h3>
@@ -3880,7 +3887,7 @@ END:VCALENDAR`;
           <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
             <h4 class="font-bold text-teal-400 text-[10px] uppercase tracking-wider">Profile & Status</h4>
             <p class="flex justify-between items-center"><span class="text-slate-400">Experience:</span><span class="text-slate-200">${doctor.experience}</span></p>
-            <p class="flex justify-between items-center"><span class="text-slate-400">Rating:</span><span class="text-amber-400 font-bold">⭐ ${doctor.rating}</span></p>
+            <p class="flex justify-between items-center"><span class="text-slate-400">Rating:</span><span class="rating-value font-bold">${doctor.rating}</span></p>
             <p class="flex justify-between items-center"><span class="text-slate-400">Availability:</span><span class="badge badge-${doctor.availability === 'Available' ? 'confirmed' : 'pending'}">${doctor.availability || 'Available'}</span></p>
             <p class="flex justify-between items-center"><span class="text-slate-400">Status:</span><span class="badge badge-${doctor.status === 'Active' ? 'confirmed' : 'cancelled'}">${doctor.status || 'Active'}</span></p>
           </div>
