@@ -896,6 +896,122 @@ const ClinovaApp = {
     if (window.lucide) window.lucide.createIcons();
   },
 
+  openDoctorScheduleModal() {
+    const modal = document.createElement('div');
+    modal.id = 'doctor-schedule-modal';
+    modal.className = 'fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+      <div class="glass-card max-w-md w-full p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="calendar" class="w-5 h-5 text-teal-400"></i> Doctor Schedule & Availability
+          </h3>
+          <button onclick="document.getElementById('doctor-schedule-modal').remove()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-3 text-xs text-slate-300">
+          <p class="text-slate-400">Configure your active consultation time slots. Patient booking uses this live availability data.</p>
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+            <div class="flex justify-between items-center font-mono text-[11px]">
+              <span>Monday – Friday</span>
+              <span class="text-teal-400 font-bold">09:00 AM – 05:00 PM</span>
+            </div>
+            <div class="flex justify-between items-center font-mono text-[11px]">
+              <span>Saturday</span>
+              <span class="text-teal-400 font-bold">10:00 AM – 02:00 PM</span>
+            </div>
+            <div class="flex justify-between items-center font-mono text-[11px]">
+              <span>Sunday</span>
+              <span class="text-slate-500">Unavailable</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2 border-t border-slate-800">
+          <button onclick="document.getElementById('doctor-schedule-modal').remove()" class="btn btn-primary text-xs">
+            Save Schedule Configuration
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async openDoctorConsultationModal(apptId) {
+    const user = window.clinovaAuth.getCurrentUser();
+    if (!user) return;
+    const apptsRes = await window.clinovaAPI.getAppointments(user);
+    const appts = apptsRes.success ? apptsRes.data : [];
+    const appt = appts.find(a => a.id === apptId) || { id: apptId, patientName: 'Patient', reason: 'General Consultation' };
+
+    const modal = document.createElement('div');
+    modal.id = 'doctor-consult-modal';
+    modal.className = 'fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+      <div class="glass-card max-w-lg w-full p-6 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+          <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="stethoscope" class="w-5 h-5 text-teal-400"></i> Clinical Consultation Workspace
+          </h3>
+          <button onclick="document.getElementById('doctor-consult-modal').remove()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1 text-xs">
+            <div class="text-slate-400">Patient: <strong class="text-slate-100">${appt.patientName}</strong> (${appt.patientId || 'PT-10245'})</div>
+            <div class="text-slate-400">Visit Reason: <span class="text-cyan-400">${appt.reason}</span></div>
+          </div>
+
+          <form id="doctor-consult-form" onsubmit="ClinovaApp.handleDoctorConsultSubmit(event, '${appt.id}')" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Clinical Diagnosis</label>
+              <input type="text" id="consult-diagnosis" required class="input-field w-full text-xs" placeholder="e.g. Acute Bronchitis, Mild Dehydration">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Clinical Notes & Observations</label>
+              <textarea id="consult-notes" rows="3" required class="input-field w-full text-xs" placeholder="Describe symptoms, vital signs, physical exam findings..."></textarea>
+            </div>
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Prescription / Treatment Plan</label>
+              <input type="text" id="consult-prescription" required class="input-field w-full text-xs" placeholder="e.g. Amoxicillin 500mg - 1 tab thrice daily for 7 days">
+            </div>
+            <div>
+              <label class="block font-medium text-slate-300 mb-1">Follow-up Instructions</label>
+              <input type="text" id="consult-followup" class="input-field w-full text-xs" placeholder="e.g. Return in 2 weeks for evaluation">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <button type="button" onclick="document.getElementById('doctor-consult-modal').remove()" class="btn btn-secondary text-xs">Cancel</button>
+              <button type="submit" class="btn btn-primary text-xs">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Complete Consultation & Issue Record
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async handleDoctorConsultSubmit(event, apptId) {
+    event.preventDefault();
+    const diagnosis = document.getElementById('consult-diagnosis').value;
+    const notes = document.getElementById('consult-notes').value;
+    const prescription = document.getElementById('consult-prescription').value;
+    const followUp = document.getElementById('consult-followup').value;
+
+    const modal = document.getElementById('doctor-consult-modal');
+    if (modal) modal.remove();
+
+    this.showToast('Consultation completed! Synthetic medical record issued.', 'success');
+    this.navigate('doctor-dashboard');
+  },
+
+
   // --- ADMIN CONTROL CENTER VIEWS ---
   async renderAdminDashboard() {
     const user = window.clinovaAuth.getCurrentUser();

@@ -1310,6 +1310,17 @@ class ClinovaAPI {
 
     return this._success(record);
   }
+
+  async getAuditLogs(currentUser) {
+    await this._delay(100);
+    const authCheck = this._verifySession(currentUser, 'ADMIN');
+    if (!authCheck.valid) return authCheck.error;
+
+    const logs = this.db.get('auditLogs') || [];
+    const sorted = [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return this._success(sorted);
+  }
 }
 
 window.clinovaAPI = new ClinovaAPI();
+
