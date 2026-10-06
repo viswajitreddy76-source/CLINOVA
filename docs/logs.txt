@@ -1461,6 +1461,40 @@ Actions Taken:
 * Conducted 15-point security matrix compliance verification for CLINOVA
 * Appended turn log entry to docs/logs.txt
 
+================================================================================
+[2026-10-06T05:34:05+05:30] Google Identity OAuth 2.0 Integration
+================================================================================
+User Prompt (verbatim):
+312513267131-hepjiprnt8mmf2gjt9ulcvbbbtbstct6.apps.googleusercontent.com
+
+this is client id enable google authentication
+
+Agent Response:
+Enabled Google Identity OAuth 2.0 Single Sign-On (SSO) authentication in CLINOVA:
+1. Configured Google Identity SDK script (`https://accounts.google.com/gsi/client`) and updated Content Security Policy (CSP) headers in `src/index.html`.
+2. Implemented `loginWithGoogle(googleJwtToken)` in `src/js/api.js` to parse Google JWT tokens, extract user profile information (`email`, `name`, `sub`, `picture`), auto-register new patient profiles if first-time sign in, establish 8-hour sessions, and log `LOGIN_GOOGLE` security audit events.
+3. Embedded Google Sign-In buttons in `renderLoginView` and `renderRegisterView` in `src/js/app.js` using Client ID `312513267131-hepjiprnt8mmf2gjt9ulcvbbbtbstct6.apps.googleusercontent.com`.
+
+Agent Response Summary:
+Integrated Google OAuth 2.0 Identity Services with Client ID `312513267131-hepjiprnt8mmf2gjt9ulcvbbbtbstct6.apps.googleusercontent.com`. Enabled Google Sign-In button, automatic patient profile creation, secure session generation, and audit logging.
+
+Commit SHA:
+e259d91
+
+Files Modified / Created:
+* src/index.html (Modified)
+* src/js/api.js (Modified)
+* src/js/app.js (Modified)
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Loaded Google Identity Services SDK in src/index.html
+* Updated CSP headers in src/index.html
+* Implemented loginWithGoogle API endpoint in src/js/api.js
+* Embedded Google Sign-In rendering and credential callback in src/js/app.js
+* Committed changes with git SHA e259d91
+
+
 
 
 
