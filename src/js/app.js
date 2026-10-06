@@ -762,9 +762,50 @@ const ClinovaApp = {
 
             <button type="submit" class="w-full btn btn-primary py-3 mb-4">Sign In to Dashboard</button>
           </form>
+
+          <!-- Google OAuth SSO Integration -->
+          <div class="relative my-6 text-center">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+            <span class="relative px-3 bg-slate-950 text-[10px] text-slate-400 uppercase font-mono tracking-wider">Or Sign In with Google</span>
+          </div>
+
+          <div class="flex justify-center min-h-[44px]" id="google-login-container"></div>
         </div>
       </div>
     `;
+    setTimeout(() => this.initGoogleSignIn('google-login-container'), 100);
+  },
+
+  initGoogleSignIn(containerId = 'google-login-container') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    window.handleGoogleCredentialResponse = async (response) => {
+      if (response && response.credential) {
+        ClinovaApp.showToast('Authenticating with Google OAuth 2.0...', 'info');
+        const res = await window.clinovaAPI.loginWithGoogle(response.credential);
+        if (res.success) {
+          window.clinovaAuth.setSession(res.data.session);
+        } else {
+          ClinovaApp.showToast(`Google Sign-In error: ${res.message}`, 'error');
+        }
+      }
+    };
+
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: '312513267131-hepjiprnt8mmf2gjt9ulcvbbbtbstct6.apps.googleusercontent.com',
+          callback: window.handleGoogleCredentialResponse
+        });
+        window.google.accounts.id.renderButton(
+          container,
+          { theme: 'filled_blue', size: 'large', width: 280, text: 'signin_with', shape: 'pill' }
+        );
+      } catch (e) {
+        console.warn('Google Identity initialization deferred:', e);
+      }
+    }
   },
 
   renderRegisterView() {
@@ -800,9 +841,18 @@ const ClinovaApp = {
             </div>
             <button type="submit" class="w-full btn btn-primary py-3">Complete Registration</button>
           </form>
+
+          <!-- Google OAuth SSO Integration -->
+          <div class="relative my-6 text-center">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-800"></div></div>
+            <span class="relative px-3 bg-slate-950 text-[10px] text-slate-400 uppercase font-mono tracking-wider">Or Register with Google</span>
+          </div>
+
+          <div class="flex justify-center min-h-[44px]" id="google-register-container"></div>
         </div>
       </div>
     `;
+    setTimeout(() => this.initGoogleSignIn('google-register-container'), 100);
   },
 
   async renderDoctorDiscoveryView() {

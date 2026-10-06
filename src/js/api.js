@@ -171,6 +171,121 @@ class ClinovaAPI {
     return this._success({ session, user: safeUser });
   }
 
+  async loginWithGoogle(googleJwtToken) {
+    await this._delay(200);
+    if (!googleJwtToken) return this._error('Google authentication token is required.', 400);
+
+    let payload = null;
+    try {
+      const base64Url = googleJwtToken.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      payload = JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Failed to parse Google JWT credential:', e);
+      return this._error('Invalid Google authentication payload.', 400);
+    }
+
+    if (!payload || !payload.email) {
+      return this._error('Unable to extract user profile from Google Identity token.', 400);
+    }
+
+    const cleanEmail = this._sanitize(payload.email).toLowerCase().trim();
+    const fullName = this._sanitize(payload.name || payload.given_name || 'Google User');
+
+    let user = this.db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
+
+    if (!user) {
+      // Auto-register new Patient using Google SSO Profile
+      const newPatientNum = 10249 + this.db.get('patients').length;
+      const patientId = `PT-${newPatientNum}`;
+      const userId = `usr-google-${Date.now()}`;
+      const dummyPassHash = await window.ClinovaCrypto.hashPassword('GoogleOAuth_' + Date.now());
+
+      user = {
+        id: userId,
+        email: cleanEmail,
+        passwordHash: dummyPassHash,
+        role: 'PATIENT',
+        patientId,
+        fullName,
+        googleSub: payload.sub,
+        picture: payload.picture || null,
+        createdAt: new Date().toISOString(),
+        isActive: true
+      };
+      this.db.insert('users', user);
+
+      const newPatient = {
+        id: patientId,
+        userId,
+        patientId,
+        fullName,
+        dateOfBirth: '2000-01-01',
+        age: 26,
+        gender: 'Other',
+        phone: '+1 (555) 000-GOOGLE',
+        email: cleanEmail,
+        address: 'Google OAuth Authenticated User',
+        bloodGroup: 'O+',
+        allergies: ['None listed (Synthetic)'],
+        existingConditions: ['None listed (Synthetic)'],
+        currentMedications: ['None listed (Synthetic)'],
+        emergencyContactName: 'Google Contact',
+        emergencyContactRelationship: 'Family',
+        emergencyContactPhone: '+1 (555) 000-9999',
+        healthSnapshot: {
+          bloodPressure: '120/80 mmHg',
+          heartRate: '72 bpm',
+          bmi: '22.0 kg/m²',
+          temperature: '98.6 °F',
+          updatedAt: new Date().toISOString().split('T')[0]
+        },
+        status: 'Active',
+        lastVisit: 'Google SSO Initial Login'
+      };
+      this.db.insert('patients', newPatient);
+
+      this.db.logAudit(userId, fullName, 'PATIENT', 'REGISTER', 'PatientProfile', patientId, 'SUCCESS', `Created patient profile via Google SSO (${cleanEmail})`, '127.0.0.1');
+    }
+
+    if (!user.isActive) {
+      this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN_FAILED', 'AuthService', cleanEmail, 'DENIED', 'Deactivated Google account login attempt', '127.0.0.1');
+      return this._error('Account deactivated. Please contact support.', 403);
+    }
+
+    const token = 'sess_' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+
+    const session = {
+      token,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      patientId: user.patientId || null,
+      doctorId: user.doctorId || null,
+      authProvider: 'GOOGLE_OAUTH_2.0',
+      loggedInAt: new Date().toISOString(),
+      expiresAt
+    };
+
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      patientId: user.patientId || null,
+      doctorId: user.doctorId || null,
+      isActive: user.isActive
+    };
+
+    this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN', 'AuthService', user.email, 'SUCCESS', 'Authenticated via Google Identity OAuth 2.0', '127.0.0.1');
+    return this._success({ session, user: safeUser });
+  }
+
   async logout(currentUser) {
     await this._delay(100);
     if (currentUser && currentUser.token) {
