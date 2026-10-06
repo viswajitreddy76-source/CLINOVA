@@ -770,10 +770,29 @@ const ClinovaApp = {
           </div>
 
           <div class="flex justify-center min-h-[44px]" id="google-login-container"></div>
+          
+          <div class="mt-3 text-center space-y-2">
+            <button type="button" onclick="ClinovaApp.loginWithGoogleMock('viswajitreddy76@gmail.com', 'Viswajit Reddy')" class="w-full py-2.5 px-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition flex items-center justify-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4"></i> Sign In as viswajitreddy76@gmail.com (Google SSO)
+            </button>
+            <p class="text-[10px] text-slate-500 leading-tight">
+              Fix Google OAuth 401 (no registered origin): Add your local port (e.g. <code class="text-cyan-400 font-mono">http://localhost:3000</code>) to Google Cloud Console → OAuth 2.0 Credentials → Authorized JavaScript Origins.
+            </p>
+          </div>
         </div>
       </div>
     `;
     setTimeout(() => this.initGoogleSignIn('google-login-container'), 100);
+  },
+
+  async loginWithGoogleMock(email = 'viswajitreddy76@gmail.com', name = 'Viswajit Reddy') {
+    this.showToast(`Authenticating Google account (${email})...`, 'info');
+    const res = await window.clinovaAPI.loginWithGoogleDemoAccount(email, name);
+    if (res.success) {
+      window.clinovaAuth.setSession(res.data.session);
+    } else {
+      this.showToast(res.message, 'error');
+    }
   },
 
   initGoogleSignIn(containerId = 'google-login-container') {

@@ -286,6 +286,99 @@ class ClinovaAPI {
     return this._success({ session, user: safeUser });
   }
 
+  async loginWithGoogleDemoAccount(email = 'viswajitreddy76@gmail.com', name = 'Viswajit Reddy') {
+    await this._delay(200);
+    const cleanEmail = this._sanitize(email).toLowerCase().trim();
+    const fullName = this._sanitize(name);
+
+    let user = this.db.findOne('users', u => u.email.toLowerCase() === cleanEmail);
+
+    if (!user) {
+      const newPatientNum = 10249 + this.db.get('patients').length;
+      const patientId = `PT-${newPatientNum}`;
+      const userId = `usr-google-${Date.now()}`;
+      const dummyPassHash = await window.ClinovaCrypto.hashPassword('GoogleOAuth_' + Date.now());
+
+      user = {
+        id: userId,
+        email: cleanEmail,
+        passwordHash: dummyPassHash,
+        role: 'PATIENT',
+        patientId,
+        fullName,
+        googleSub: 'google-sub-' + Date.now(),
+        createdAt: new Date().toISOString(),
+        isActive: true
+      };
+      this.db.insert('users', user);
+
+      const newPatient = {
+        id: patientId,
+        userId,
+        patientId,
+        fullName,
+        dateOfBirth: '2000-01-01',
+        age: 26,
+        gender: 'Male',
+        phone: '+1 (555) 777-GOOGLE',
+        email: cleanEmail,
+        address: 'Google Authenticated Patient Account',
+        bloodGroup: 'O+',
+        allergies: ['None listed (Synthetic)'],
+        existingConditions: ['None listed (Synthetic)'],
+        currentMedications: ['None listed (Synthetic)'],
+        emergencyContactName: 'Google Contact',
+        emergencyContactRelationship: 'Family',
+        emergencyContactPhone: '+1 (555) 000-9999',
+        healthSnapshot: {
+          bloodPressure: '120/80 mmHg',
+          heartRate: '72 bpm',
+          bmi: '22.4 kg/m²',
+          temperature: '98.6 °F',
+          updatedAt: new Date().toISOString().split('T')[0]
+        },
+        status: 'Active',
+        lastVisit: 'Google OAuth Single Sign-On'
+      };
+      this.db.insert('patients', newPatient);
+
+      this.db.logAudit(userId, fullName, 'PATIENT', 'REGISTER', 'PatientProfile', patientId, 'SUCCESS', `Created patient via Google SSO Sandbox (${cleanEmail})`, '127.0.0.1');
+    }
+
+    if (!user.isActive) {
+      return this._error('Account deactivated. Please contact support.', 403);
+    }
+
+    const token = 'sess_' + Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+
+    const session = {
+      token,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      patientId: user.patientId || null,
+      doctorId: user.doctorId || null,
+      authProvider: 'GOOGLE_OAUTH_2.0_SANDBOX',
+      loggedInAt: new Date().toISOString(),
+      expiresAt
+    };
+
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      patientId: user.patientId || null,
+      doctorId: user.doctorId || null,
+      isActive: user.isActive
+    };
+
+    this.db.logAudit(user.id, user.fullName, user.role, 'LOGIN', 'AuthService', user.email, 'SUCCESS', 'Authenticated via Google Identity OAuth 2.0 (viswajitreddy76@gmail.com)', '127.0.0.1');
+    return this._success({ session, user: safeUser });
+  }
+
   async logout(currentUser) {
     await this._delay(100);
     if (currentUser && currentUser.token) {
