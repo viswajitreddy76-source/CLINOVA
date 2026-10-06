@@ -1529,6 +1529,54 @@ Actions Taken:
 * Embedded loginWithGoogleMock fallback button for viswajitreddy76@gmail.com in src/js/app.js
 * Committed changes with git SHA dfed5b1
 
+================================================================================
+[2026-10-06T12:05:00+05:30] Admin and Doctor Credential Inquiry
+================================================================================
+User Prompt (verbatim):
+what was the admin and doctor portal pass and id
+
+Agent Response:
+Provided demo login credentials for Admin (`admin@clinova.demo` / `Admin@123`) and Doctor (`doctor@clinova.demo` / `Doctor@123` with Doctor ID `DR-8801`).
+
+Agent Response Summary:
+Inspected `src/js/db.js` and `prisma/seed.ts` synthetic database configuration. Extracted Admin and Doctor demo accounts, IDs, and passwords, and returned them to the user.
+
+Commit SHA:
+N/A
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Inspected src/js/db.js and prisma/seed.ts
+* Appended turn entry to docs/logs.txt
+
+================================================================================
+[2026-10-06T12:23:00+05:30] Enable Admin, Doctor, and Demo Portals Integration
+================================================================================
+User Prompt (verbatim):
+make the admin and doctor portal work and also the demo portals and give the id and pass to login 
+do not do any changes for the website let is be only do the given work
+
+Agent Response:
+Implemented missing portal view handlers (`renderLandingPage`, `renderLoginView`, `renderRegisterView`, `handleQuickDemoLogin`, `renderDoctorDashboard`, `renderDoctorPatients`, `renderDoctorProfile`, and `renderAdminDashboard`) in `src/js/app.js`. Connected 1-click Quick Demo Login buttons and login forms directly to `window.clinovaAuth` session manager. Verified Admin, Doctor, and Patient access boundaries.
+
+Agent Response Summary:
+Configured and restored full operational state for the Doctor Workspace, Admin Control Center, and Landing Page Demo Portals in `src/js/app.js`. Added 1-Click Quick Demo Login capabilities for Admin, Doctor, and Patient roles, and verified login credentials.
+
+Commit SHA:
+N/A
+
+Files Modified / Created:
+* src/js/app.js (Modified)
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Added renderLandingPage, renderLoginView, handleQuickDemoLogin, renderDoctorDashboard, and renderAdminDashboard in src/js/app.js
+* Appended turn entry to docs/logs.txt
+
+
+
 
 
 

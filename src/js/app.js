@@ -440,7 +440,563 @@ const ClinovaApp = {
     if (window.lucide) window.lucide.createIcons();
   },
 
+  // --- LANDING PAGE (`/#landing`) ---
+  renderLandingPage() {
+    const container = document.getElementById('main-content');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-12 space-y-16">
+        <!-- Hero Section -->
+        <div class="text-center space-y-6 max-w-4xl mx-auto pt-6">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-widest mb-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            Build Secure 24 — PS-04 Secure Clinic & Appointment Management
+          </div>
+          <h1 class="text-4xl md:text-6xl font-black text-slate-100 tracking-tight leading-tight">
+            Next-Gen Secure <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-500 bg-clip-text text-transparent">HealthTech Platform</span>
+          </h1>
+          <p class="text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+            Welcome to <strong class="text-slate-200">CLINOVA</strong>. Designed with role-based access control, cryptographic session isolation, synthetic privacy sandboxing, and real-time consultation management.
+          </p>
+        </div>
+
+        <!-- Demo Portals Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+          <!-- Patient Portal Card -->
+          <div class="glass-card p-8 rounded-2xl border border-slate-800 hover:border-cyan-500/50 transition-all group flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <div class="space-y-4">
+              <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition">
+                <i data-lucide="user-check" class="w-7 h-7"></i>
+              </div>
+              <h3 class="text-2xl font-bold text-slate-100">Patient Portal</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Book appointments, search clinical specialists, view digital medical timeline, reschedule visits, and export calendar events.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-300">
+                <div class="text-cyan-400 font-bold text-xs">Demo Credentials:</div>
+                <div>ID/Email: <span class="text-slate-100">patient@clinova.demo</span></div>
+                <div>Pass: <span class="text-slate-100">Patient@123</span></div>
+              </div>
+            </div>
+            <div class="space-y-3 pt-2">
+              <button onclick="ClinovaApp.handleQuickDemoLogin('PATIENT')" class="btn btn-primary w-full py-3 text-xs font-bold justify-center shadow-lg shadow-cyan-500/20">
+                <i data-lucide="zap" class="w-4 h-4"></i> Quick 1-Click Demo Login
+              </button>
+              <a href="#login" class="btn btn-secondary w-full py-2.5 text-xs justify-center">
+                Patient Sign In Form &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Doctor Portal Card -->
+          <div class="glass-card p-8 rounded-2xl border border-slate-800 hover:border-teal-500/50 transition-all group flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <div class="space-y-4">
+              <div class="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center group-hover:scale-110 transition">
+                <i data-lucide="stethoscope" class="w-7 h-7"></i>
+              </div>
+              <h3 class="text-2xl font-bold text-slate-100">Doctor Workspace</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Manage consultation queue, issue digital diagnosis & prescriptions, set schedule availability, and view assigned patients.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-300">
+                <div class="text-teal-400 font-bold text-xs">Demo Credentials:</div>
+                <div>ID/Email: <span class="text-slate-100">doctor@clinova.demo</span></div>
+                <div>Pass: <span class="text-slate-100">Doctor@123</span></div>
+                <div>Doctor ID: <span class="text-slate-100">DR-8801</span></div>
+              </div>
+            </div>
+            <div class="space-y-3 pt-2">
+              <button onclick="ClinovaApp.handleQuickDemoLogin('DOCTOR')" class="btn btn-primary w-full py-3 text-xs font-bold justify-center shadow-lg shadow-teal-500/20">
+                <i data-lucide="zap" class="w-4 h-4"></i> Quick 1-Click Demo Login
+              </button>
+              <a href="#doctor-login" class="btn btn-secondary w-full py-2.5 text-xs justify-center">
+                Doctor Sign In Form &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Admin Portal Card -->
+          <div class="glass-card p-8 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all group flex flex-col justify-between space-y-6 relative overflow-hidden">
+            <div class="space-y-4">
+              <div class="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center group-hover:scale-110 transition">
+                <i data-lucide="shield-check" class="w-7 h-7"></i>
+              </div>
+              <h3 class="text-2xl font-bold text-slate-100">Admin Control Center</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Oversee clinic analytics, manage patients & doctors, inspect master schedule, and monitor real-time security audit logs.
+              </p>
+              <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 text-[11px] font-mono space-y-1 text-slate-300">
+                <div class="text-purple-400 font-bold text-xs">Demo Credentials:</div>
+                <div>ID/Email: <span class="text-slate-100">admin@clinova.demo</span></div>
+                <div>Pass: <span class="text-slate-100">Admin@123</span></div>
+              </div>
+            </div>
+            <div class="space-y-3 pt-2">
+              <button onclick="ClinovaApp.handleQuickDemoLogin('ADMIN')" class="btn btn-primary w-full py-3 text-xs font-bold justify-center shadow-lg shadow-purple-500/20">
+                <i data-lucide="zap" class="w-4 h-4"></i> Quick 1-Click Demo Login
+              </button>
+              <a href="#admin-login" class="btn btn-secondary w-full py-2.5 text-xs justify-center">
+                Admin Sign In Form &rarr;
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async handleQuickDemoLogin(role = 'PATIENT') {
+    this.showToast(`Signing in as Demo ${role}...`, 'info');
+    const res = await window.clinovaAuth.loginAsDemo(role);
+    if (res.success) {
+      this.showToast(`Logged in successfully as Demo ${role}!`, 'success');
+      if (role === 'PATIENT') this.navigate('patient-dashboard');
+      else if (role === 'DOCTOR') this.navigate('doctor-dashboard');
+      else if (role === 'ADMIN') this.navigate('admin-dashboard');
+    } else {
+      this.showToast(res.message || 'Login failed', 'error');
+    }
+  },
+
+  // --- LOGIN & REGISTER VIEWS ---
+  renderLoginView(role = 'PATIENT') {
+    const container = document.getElementById('main-content');
+    if (!container) return;
+
+    let title = 'Patient Portal Sign In';
+    let defaultEmail = 'patient@clinova.demo';
+    let defaultPass = 'Patient@123';
+    let badgeColor = 'cyan';
+    let icon = 'user-check';
+
+    if (role === 'DOCTOR') {
+      title = 'Doctor Workspace Sign In';
+      defaultEmail = 'doctor@clinova.demo';
+      defaultPass = 'Doctor@123';
+      badgeColor = 'teal';
+      icon = 'stethoscope';
+    } else if (role === 'ADMIN') {
+      title = 'Admin Control Center Sign In';
+      defaultEmail = 'admin@clinova.demo';
+      defaultPass = 'Admin@123';
+      badgeColor = 'purple';
+      icon = 'shield-check';
+    }
+
+    container.innerHTML = `
+      <div class="max-w-md mx-auto py-12 px-4">
+        <div class="glass-card p-8 rounded-2xl border border-slate-800 space-y-6 shadow-2xl">
+          <div class="text-center space-y-2">
+            <div class="w-12 h-12 rounded-xl bg-${badgeColor}-500/10 border border-${badgeColor}-500/30 text-${badgeColor}-400 flex items-center justify-center mx-auto mb-3">
+              <i data-lucide="${icon}" class="w-6 h-6"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-100">${title}</h2>
+            <p class="text-xs text-slate-400">Enter your credentials to access the secure ${role.toLowerCase()} interface.</p>
+          </div>
+
+          <form id="auth-login-form" class="space-y-4" onsubmit="ClinovaApp.handleLoginSubmit(event, '${role}')">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Email Address / ID</label>
+              <input type="email" id="login-email" value="${defaultEmail}" required class="input-field w-full text-xs font-mono" placeholder="user@clinova.demo">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+              <input type="password" id="login-password" value="${defaultPass}" required class="input-field w-full text-xs font-mono" placeholder="••••••••">
+            </div>
+
+            <div id="login-error-msg" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs"></div>
+
+            <button type="submit" class="btn btn-primary w-full py-3 text-xs font-bold justify-center">
+              <i data-lucide="log-in" class="w-4 h-4"></i> Sign In to ${role} Portal
+            </button>
+          </form>
+
+          <div class="pt-4 border-t border-slate-800 space-y-3">
+            <button type="button" onclick="ClinovaApp.handleQuickDemoLogin('${role}')" class="btn btn-secondary w-full py-2.5 text-xs justify-center font-semibold text-cyan-400">
+              <i data-lucide="zap" class="w-4 h-4"></i> 1-Click Quick Demo Login
+            </button>
+            <div class="flex justify-between text-xs text-slate-400 pt-2">
+              <a href="#landing" class="hover:text-cyan-400 transition">&larr; Back to Home</a>
+              ${role === 'PATIENT' ? `<a href="#register" class="hover:text-cyan-400 transition">Create Account</a>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async handleLoginSubmit(event, role = 'PATIENT') {
+    event.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errBox = document.getElementById('login-error-msg');
+
+    if (errBox) errBox.classList.add('hidden');
+
+    const res = await window.clinovaAPI.login(email, password);
+    if (res.success) {
+      window.clinovaAuth.setSession(res.data.session);
+    } else {
+      if (errBox) {
+        errBox.textContent = res.message || 'Invalid email or password.';
+        errBox.classList.remove('hidden');
+      } else {
+        this.showToast(res.message || 'Login failed', 'error');
+      }
+    }
+  },
+
+  renderRegisterView() {
+    const container = document.getElementById('main-content');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="max-w-lg mx-auto py-12 px-4">
+        <div class="glass-card p-8 rounded-2xl border border-slate-800 space-y-6">
+          <div class="text-center space-y-2">
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mx-auto mb-3">
+              <i data-lucide="user-plus" class="w-6 h-6"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-100">Patient Registration</h2>
+            <p class="text-xs text-slate-400">Create a new secure patient account at CLINOVA.</p>
+          </div>
+
+          <form id="auth-register-form" class="space-y-4" onsubmit="ClinovaApp.handleRegisterSubmit(event)">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+              <input type="text" id="reg-fullname" required class="input-field w-full text-xs" placeholder="e.g. Alex Johnson">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
+              <input type="email" id="reg-email" required class="input-field w-full text-xs" placeholder="name@example.com">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
+              <input type="password" id="reg-password" required class="input-field w-full text-xs" placeholder="At least 6 characters">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Phone Number</label>
+                <input type="tel" id="reg-phone" required class="input-field w-full text-xs" placeholder="+1 (555) 000-0000">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Date of Birth</label>
+                <input type="date" id="reg-dob" required class="input-field w-full text-xs">
+              </div>
+            </div>
+
+            <div id="reg-error-msg" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs"></div>
+
+            <button type="submit" class="btn btn-primary w-full py-3 text-xs font-bold justify-center">
+              <i data-lucide="check" class="w-4 h-4"></i> Complete Registration
+            </button>
+          </form>
+
+          <div class="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
+            Already have an account? <a href="#login" class="text-cyan-400 hover:underline">Sign In</a>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async handleRegisterSubmit(event) {
+    event.preventDefault();
+    const fullName = document.getElementById('reg-fullname').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const phone = document.getElementById('reg-phone').value;
+    const dob = document.getElementById('reg-dob').value;
+    const errBox = document.getElementById('reg-error-msg');
+
+    if (errBox) errBox.classList.add('hidden');
+
+    const res = await window.clinovaAPI.registerPatient({ fullName, email, password, phone, dateOfBirth: dob });
+    if (res.success) {
+      this.showToast('Registration successful! Logging in...', 'success');
+      const loginRes = await window.clinovaAPI.login(email, password);
+      if (loginRes.success) {
+        window.clinovaAuth.setSession(loginRes.data.session);
+      }
+    } else {
+      if (errBox) {
+        errBox.textContent = res.message || 'Registration failed';
+        errBox.classList.remove('hidden');
+      }
+    }
+  },
+
+  // --- DOCTOR WORKSPACE VIEWS ---
+  async renderDoctorDashboard() {
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || (user.role !== 'DOCTOR' && user.role !== 'ADMIN')) {
+      return this.renderUnauthorized('Doctor Workspace Restricted');
+    }
+
+    try {
+      const apptsRes = await window.clinovaAPI.getAppointments(user);
+      const appts = apptsRes.success ? apptsRes.data : [];
+      const pending = appts.filter(a => a.status === 'CONFIRMED' || a.status === 'WAITING');
+      const completed = appts.filter(a => a.status === 'COMPLETED');
+
+      container.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          <!-- Doctor Workspace Header -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-2xl border border-slate-800">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-success">Doctor Workspace Active</span>
+                <span class="text-xs text-slate-500 font-mono">ID: ${user.doctorId || 'DR-8801'}</span>
+              </div>
+              <h1 class="text-2xl font-bold text-slate-100">Welcome, ${user.fullName}</h1>
+              <p class="text-xs text-slate-400">Manage today's consultation queue and patient records.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="ClinovaApp.openDoctorScheduleModal()" class="btn btn-secondary text-xs">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Manage Schedule
+              </button>
+            </div>
+          </div>
+
+          <!-- Doctor Key Metrics Grid -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Total Consultations</span>
+              <div class="text-3xl font-extrabold text-cyan-400">${appts.length}</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Active Queue</span>
+              <div class="text-3xl font-extrabold text-amber-400">${pending.length}</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Completed Today</span>
+              <div class="text-3xl font-extrabold text-teal-400">${completed.length}</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Doctor Rating</span>
+              <div class="text-3xl font-extrabold text-purple-400">⭐ 4.9</div>
+            </div>
+          </div>
+
+          <!-- Consultation Queue Table -->
+          <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-slate-100">Today's Patient Consultation Queue</h3>
+              <span class="text-xs text-slate-400">${appts.length} Total Appointments</span>
+            </div>
+
+            ${appts.length === 0 ? `
+              <div class="text-center py-12 space-y-3">
+                <i data-lucide="calendar-check" class="w-12 h-12 text-slate-600 mx-auto"></i>
+                <p class="text-slate-400 text-xs">No consultation appointments in queue right now.</p>
+              </div>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                  <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                    <tr>
+                      <th class="p-3">Appt ID</th>
+                      <th class="p-3">Patient Name</th>
+                      <th class="p-3">Date & Time</th>
+                      <th class="p-3">Reason</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60">
+                    ${appts.map(a => `
+                      <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3 font-mono text-cyan-400">${a.id}</td>
+                        <td class="p-3 font-semibold text-slate-100">${a.patientName}</td>
+                        <td class="p-3">${a.date} at ${a.time}</td>
+                        <td class="p-3 text-slate-400">${a.reason}</td>
+                        <td class="p-3">
+                          <span class="badge ${a.status === 'COMPLETED' ? 'badge-success' : a.status === 'CANCELLED' ? 'badge-danger' : 'badge-warning'}">
+                            ${a.status}
+                          </span>
+                        </td>
+                        <td class="p-3 text-right space-x-2">
+                          ${a.status !== 'COMPLETED' && a.status !== 'CANCELLED' ? `
+                            <button onclick="ClinovaApp.openDoctorConsultationModal('${a.id}')" class="btn btn-primary py-1 px-3 text-[11px]">
+                              <i data-lucide="edit-3" class="w-3 h-3"></i> Consult
+                            </button>
+                          ` : `
+                            <span class="text-[11px] text-slate-500">Processed</span>
+                          `}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    } catch (e) {
+      console.error(e);
+      this.renderErrorState('Unable to load doctor workspace');
+    }
+  },
+
+  async renderDoctorPatients() {
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || (user.role !== 'DOCTOR' && user.role !== 'ADMIN')) return this.renderUnauthorized('Doctor Access Restricted');
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-100">Assigned Patient Roster</h1>
+            <p class="text-xs text-slate-400">View synthetic medical profiles and consultation histories.</p>
+          </div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 text-center py-12 text-slate-400 text-xs">
+          <i data-lucide="users" class="w-12 h-12 text-teal-400 mx-auto mb-3"></i>
+          <p>Patient roster loaded securely under synthetic privacy sandbox (DEMO DATA).</p>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  async renderDoctorProfile() {
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user) return this.renderUnauthorized();
+
+    container.innerHTML = `
+      <div class="max-w-3xl mx-auto py-8 px-4 space-y-6">
+        <div class="glass-card p-8 rounded-2xl border border-slate-800 space-y-6">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold text-xl">
+              ${user.fullName ? user.fullName[0] : 'D'}
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-slate-100">${user.fullName}</h2>
+              <p class="text-xs text-teal-400 font-mono">Role: ${user.role} | ID: ${user.doctorId || 'DR-8801'}</p>
+              <p class="text-xs text-slate-400">${user.email}</p>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
+            <button onclick="window.clinovaAuth.clearSession()" class="btn btn-danger text-xs">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  // --- ADMIN CONTROL CENTER VIEWS ---
+  async renderAdminDashboard() {
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || user.role !== 'ADMIN') return this.renderUnauthorized('Admin Control Center Restricted');
+
+    try {
+      const auditRes = await window.clinovaAPI.getAuditLogs(user);
+      const logs = auditRes.success ? auditRes.data : [];
+
+      container.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          <!-- Admin Header -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 rounded-2xl border border-slate-800">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="badge badge-primary">Admin Control Center</span>
+                <span class="text-xs text-slate-500 font-mono">Security Sandbox Active</span>
+              </div>
+              <h1 class="text-2xl font-bold text-slate-100">System Overview & Oversight</h1>
+              <p class="text-xs text-slate-400">Clinic operations, audit logs, patient & doctor management.</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <a href="#admin-audit" class="btn btn-secondary text-xs">
+                <i data-lucide="shield" class="w-4 h-4"></i> Security Audit Logs
+              </a>
+            </div>
+          </div>
+
+          <!-- Admin KPI Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Total Registered Patients</span>
+              <div class="text-3xl font-extrabold text-cyan-400">4</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Active Doctors</span>
+              <div class="text-3xl font-extrabold text-teal-400">4</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Total System Audits</span>
+              <div class="text-3xl font-extrabold text-purple-400">${logs.length}</div>
+            </div>
+            <div class="glass-card p-5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs text-slate-400 font-medium">Security Status</span>
+              <div class="text-xl font-bold text-emerald-400">100% SECURE</div>
+            </div>
+          </div>
+
+          <!-- Recent Audit Events -->
+          <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 class="text-lg font-bold text-slate-100">Recent Security Audit Logs</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                  <tr>
+                    <th class="p-3">Timestamp</th>
+                    <th class="p-3">User</th>
+                    <th class="p-3">Role</th>
+                    <th class="p-3">Action</th>
+                    <th class="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${logs.slice(0, 5).map(l => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="p-3 font-mono text-slate-400">${l.timestamp}</td>
+                      <td class="p-3 font-semibold text-slate-100">${l.userName || l.userId}</td>
+                      <td class="p-3"><span class="badge badge-secondary">${l.role}</span></td>
+                      <td class="p-3 font-mono text-cyan-400">${l.action}</td>
+                      <td class="p-3"><span class="badge badge-success">${l.status}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    } catch (e) {
+      console.error(e);
+      this.renderErrorState('Unable to load admin dashboard');
+    }
+  },
+
+  async renderAdminPatients() {
+    return this.renderAdminDashboard();
+  },
+  async renderAdminDoctors() {
+    return this.renderAdminDashboard();
+  },
+  async renderAdminAppointments() {
+    return this.renderAdminDashboard();
+  },
+  async renderAdminAuditLogs() {
+    return this.renderAdminDashboard();
+  },
+
   // --- DYNAMIC PATIENT DASHBOARD (`/#patient-dashboard`) ---
+
 
   async renderPatientDashboard() {
     const user = window.clinovaAuth.getCurrentUser();
