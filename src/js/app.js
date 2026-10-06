@@ -850,17 +850,45 @@ const ClinovaApp = {
     const container = document.getElementById('main-content');
     if (!user || (user.role !== 'DOCTOR' && user.role !== 'ADMIN')) return this.renderUnauthorized('Doctor Access Restricted');
 
+    const patients = window.clinovaDB.get('patients') || [];
+
     container.innerHTML = `
       <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
         <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
           <div>
             <h1 class="text-2xl font-bold text-slate-100">Assigned Patient Roster</h1>
-            <p class="text-xs text-slate-400">View synthetic medical profiles and consultation histories.</p>
+            <p class="text-xs text-slate-400">View synthetic medical profiles and clinical consultation records.</p>
           </div>
+          <span class="badge badge-success font-mono">${patients.length} Registered Patients</span>
         </div>
-        <div class="glass-card p-6 rounded-2xl border border-slate-800 text-center py-12 text-slate-400 text-xs">
-          <i data-lucide="users" class="w-12 h-12 text-teal-400 mx-auto mb-3"></i>
-          <p>Patient roster loaded securely under synthetic privacy sandbox (DEMO DATA).</p>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Patient ID</th>
+                  <th class="p-3">Full Name</th>
+                  <th class="p-3">Gender / DOB</th>
+                  <th class="p-3">Blood Group</th>
+                  <th class="p-3">Contact Phone</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${patients.map(p => `
+                  <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-3 font-mono text-cyan-400 font-bold">${p.patientId || p.id}</td>
+                    <td class="p-3 font-semibold text-slate-100">${p.fullName}</td>
+                    <td class="p-3">${p.gender} • ${p.dateOfBirth}</td>
+                    <td class="p-3"><span class="badge badge-secondary">${p.bloodGroup || 'O+'}</span></td>
+                    <td class="p-3 font-mono text-slate-400">${p.phone}</td>
+                    <td class="p-3"><span class="badge badge-success">${p.status || 'Active'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -1099,17 +1127,225 @@ const ClinovaApp = {
   },
 
   async renderAdminPatients() {
-    return this.renderAdminDashboard();
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || user.role !== 'ADMIN') return this.renderUnauthorized('Admin Control Center Restricted');
+
+    const patients = window.clinovaDB.get('patients') || [];
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge badge-primary">Admin Access</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100">Patient Management</h1>
+            <p class="text-xs text-slate-400">View and manage registered clinic patient accounts.</p>
+          </div>
+          <span class="badge badge-secondary font-mono">${patients.length} Total Patients</span>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Patient ID</th>
+                  <th class="p-3">Name</th>
+                  <th class="p-3">Email</th>
+                  <th class="p-3">Phone</th>
+                  <th class="p-3">DOB</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${patients.map(p => `
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-mono text-cyan-400 font-bold">${p.patientId || p.id}</td>
+                    <td class="p-3 font-semibold text-slate-100">${p.fullName}</td>
+                    <td class="p-3 font-mono text-slate-400">${p.email}</td>
+                    <td class="p-3 font-mono text-slate-400">${p.phone}</td>
+                    <td class="p-3">${p.dateOfBirth}</td>
+                    <td class="p-3"><span class="badge badge-success">${p.status || 'Active'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
   },
+
   async renderAdminDoctors() {
-    return this.renderAdminDashboard();
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || user.role !== 'ADMIN') return this.renderUnauthorized('Admin Control Center Restricted');
+
+    const docRes = await window.clinovaAPI.getDoctors();
+    const doctors = docRes.success ? docRes.data : [];
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge badge-primary">Admin Access</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100">Doctor Management</h1>
+            <p class="text-xs text-slate-400">View and manage clinical staff and specializations.</p>
+          </div>
+          <span class="badge badge-secondary font-mono">${doctors.length} Active Specialists</span>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Doctor ID</th>
+                  <th class="p-3">Name</th>
+                  <th class="p-3">Specialization</th>
+                  <th class="p-3">Experience</th>
+                  <th class="p-3">Rating</th>
+                  <th class="p-3">Availability</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${doctors.map(d => `
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-mono text-teal-400 font-bold">${d.doctorId || d.id}</td>
+                    <td class="p-3 font-semibold text-slate-100">${d.fullName}</td>
+                    <td class="p-3 text-slate-300">${d.specialization}</td>
+                    <td class="p-3">${d.experience}</td>
+                    <td class="p-3 font-semibold text-amber-400">⭐ ${d.rating}</td>
+                    <td class="p-3"><span class="badge badge-success">${d.availabilityStatus || 'Available'}</span></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
   },
+
   async renderAdminAppointments() {
-    return this.renderAdminDashboard();
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || user.role !== 'ADMIN') return this.renderUnauthorized('Admin Control Center Restricted');
+
+    const appts = window.clinovaDB.get('appointments') || [];
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge badge-primary">Admin Access</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100">Master Schedule Oversight</h1>
+            <p class="text-xs text-slate-400">All clinic appointments across all specialists and patients.</p>
+          </div>
+          <span class="badge badge-secondary font-mono">${appts.length} Total Bookings</span>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Appt ID</th>
+                  <th class="p-3">Patient</th>
+                  <th class="p-3">Doctor</th>
+                  <th class="p-3">Date & Time</th>
+                  <th class="p-3">Reason</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${appts.map(a => `
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-mono text-cyan-400 font-bold">${a.id}</td>
+                    <td class="p-3 font-semibold text-slate-100">${a.patientName}</td>
+                    <td class="p-3 text-slate-300">${a.doctorName}</td>
+                    <td class="p-3">${a.date} at ${a.time}</td>
+                    <td class="p-3 text-slate-400">${a.reason}</td>
+                    <td class="p-3">
+                      <span class="badge ${a.status === 'COMPLETED' ? 'badge-success' : a.status === 'CANCELLED' ? 'badge-danger' : 'badge-warning'}">
+                        ${a.status}
+                      </span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
   },
+
   async renderAdminAuditLogs() {
-    return this.renderAdminDashboard();
+    const user = window.clinovaAuth.getCurrentUser();
+    const container = document.getElementById('main-content');
+    if (!user || user.role !== 'ADMIN') return this.renderUnauthorized('Admin Control Center Restricted');
+
+    const auditRes = await window.clinovaAPI.getAuditLogs(user);
+    const logs = auditRes.success ? auditRes.data : [];
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex justify-between items-center">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge badge-primary">Security System</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-100">Security Audit Logs</h1>
+            <p class="text-xs text-slate-400">Immutable record of system access, authentications, and record modifications.</p>
+          </div>
+          <span class="badge badge-secondary font-mono">${logs.length} Total Audit Entries</span>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-mono border-b border-slate-800">
+                <tr>
+                  <th class="p-3">Log ID</th>
+                  <th class="p-3">Timestamp</th>
+                  <th class="p-3">User</th>
+                  <th class="p-3">Role</th>
+                  <th class="p-3">Action Event</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">IP Address</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${logs.map(l => `
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-mono text-slate-500">${l.id || 'LOG-001'}</td>
+                    <td class="p-3 font-mono text-slate-400">${l.timestamp}</td>
+                    <td class="p-3 font-semibold text-slate-100">${l.userName || l.userId}</td>
+                    <td class="p-3"><span class="badge badge-secondary">${l.role}</span></td>
+                    <td class="p-3 font-mono text-cyan-400">${l.action}</td>
+                    <td class="p-3"><span class="badge badge-success">${l.status}</span></td>
+                    <td class="p-3 font-mono text-slate-500">${l.ip || '127.0.0.1'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
   },
+
 
   // --- DYNAMIC PATIENT DASHBOARD (`/#patient-dashboard`) ---
 
